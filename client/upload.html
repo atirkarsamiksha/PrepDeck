@@ -1,132 +1,168 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload - PrepDeck</title>
+    <title>Upload Document — PrepDeck</title>
+    <script>
+        if (!localStorage.getItem('prepdeck_token')) {
+            window.location.replace('auth.html?mode=login');
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
-        darkMode: 'class',
-        theme: { 
-            extend: { 
-                colors: { 
-                    cyanBg: '#08e3d6',
-                    primary: '#08e3d6',
-                    secondary: '#a855f7',
-                    darkbg: '#0a0a0c',
-                    panelbg: '#141416',
-                    cardbg: '#181a1f'
-                },
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif'],
-                }
-            } 
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+              }
+            },
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            }
+          }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        
-        /* Custom scrollbar for main content */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #2a2a30; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3a3a40; }
-    </style>
+    <script src="js/api.js"></script>
 </head>
-<body class="bg-darkbg text-slate-100 h-screen p-4 xl:p-6 flex justify-center font-sans overflow-hidden">
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
 
-    <!-- Centered Max-Width Container -->
-    <div class="max-w-[1400px] w-full flex flex-col h-full overflow-hidden">
+    <!-- Mobile Top Navigation Header -->
+    <header class="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                <i class="fa-solid fa-graduation-cap text-xs"></i>
+            </div>
+            <span class="font-bold text-base text-slate-900">PrepDeck</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openProfileModal()" id="mobile-top-avatar" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
+                ?
+            </button>
+            <button onclick="api.logout()" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 transition-colors" title="Logout">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-[1500px] w-full mx-auto flex-1 flex flex-col lg:flex-row p-4 sm:p-6 lg:p-8 gap-6">
         
-        <!-- Top Navbar -->
-        <header class="w-full flex justify-between items-center mb-4 px-2 shrink-0">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-wand-magic-sparkles text-primary text-2xl drop-shadow-[0_0_10px_rgba(8,227,214,0.3)]"></i>
-                <span class="text-2xl font-bold tracking-tight text-white">PrepDeck</span>
-            </div>
-            
-            <div class="flex items-center gap-6">
-                <nav class="hidden md:flex gap-6 text-sm font-semibold tracking-wide text-slate-400">
-                    <a href="dashboard.html" class="cursor-pointer hover:text-white transition-colors">Dash</a>
-                    <a href="notes.html" class="cursor-pointer hover:text-white transition-colors">Notes</a>
-                    <a href="pyqs.html" class="cursor-pointer hover:text-white transition-colors">PYQs</a>
-                    <a href="upload.html" class="text-primary cursor-pointer hover:text-white transition-colors">Upload</a>
-                    <a href="reports.html" class="cursor-pointer hover:text-white transition-colors">Reports</a>
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between shrink-0 shadow-sm hidden lg:flex h-[calc(100vh-4rem)] sticky top-8">
+            <div class="space-y-6">
+                <!-- Brand -->
+                <a href="dashboard.html" class="flex items-center gap-3 px-2 py-1 text-decoration-none">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-100">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-lg text-slate-900 tracking-tight block leading-none">PrepDeck</span>
+                        <span class="text-[10px] font-semibold text-slate-500 tracking-wider uppercase mt-1 block">Study Workspace</span>
+                    </div>
+                </a>
+
+                <!-- Navigation Links -->
+                <nav class="space-y-1.5 pt-2">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fa-solid fa-shapes text-sm w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="interview.html" class="nav-link">
+                        <i class="fa-solid fa-video text-sm w-5 text-center"></i>
+                        <span>Live Viva Interview</span>
+                    </a>
+                    <a href="notes.html" class="nav-link">
+                        <i class="fa-solid fa-book-open text-sm w-5 text-center"></i>
+                        <span>Study Library</span>
+                    </a>
+                    <a href="pyqs.html" class="nav-link">
+                        <i class="fa-regular fa-file-lines text-sm w-5 text-center"></i>
+                        <span>Past Papers</span>
+                    </a>
+                    <a href="upload.html" class="nav-link active">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm w-5 text-center"></i>
+                        <span>Upload Documents</span>
+                    </a>
+                    <a href="reports.html" class="nav-link">
+                        <i class="fa-solid fa-chart-line text-sm w-5 text-center"></i>
+                        <span>Analytics & Reports</span>
+                    </a>
                 </nav>
-                <div id="top-avatar" onclick="openProfileModal()" class="w-10 h-10 rounded-full bg-slate-700 overflow-hidden ml-4 shadow-lg border border-slate-600 flex items-center justify-center text-sm font-bold bg-gradient-to-br from-slate-600 to-slate-800 cursor-pointer hover:border-primary transition-colors">
-                    ?
+            </div>
+
+            <!-- Bottom User & Logout -->
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+                <div onclick="openProfileModal()" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-200">
+                    <div id="sidebar-avatar" class="w-9 h-9 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0">
+                        ?
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-xs font-bold text-slate-900 truncate" id="sidebar-name">Scholar</p>
+                        <p class="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Pro Tier Active</p>
+                    </div>
+                    <i class="fa-solid fa-gear text-slate-400 text-xs"></i>
                 </div>
+
+                <button onclick="api.logout()" id="logout-btn-desktop" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+                    <span>Log Out</span>
+                </button>
             </div>
-        </header>
+        </aside>
 
-        <!-- Content Area -->
-        <div class="flex flex-1 gap-4 overflow-hidden w-full min-h-0">
+        <!-- Main Workspace -->
+        <main class="flex-1 flex flex-col items-center justify-start min-w-0">
             
-            <!-- Floating Sidebar -->
-            <aside class="w-60 bg-panelbg rounded-3xl p-4 flex flex-col justify-between hidden lg:flex border border-white/5 shadow-2xl h-full flex-shrink-0">
-                <nav class="space-y-1 mt-1">
-                    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-shapes text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Dashboard</span>
-                    </a>
-                    <a href="notes.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-book-open text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Study Library</span>
-                    </a>
-                    <a href="pyqs.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-regular fa-file-lines text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Past Papers</span>
-                    </a>
-                    <a href="upload.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 text-white font-semibold transition-colors border border-white/5 shadow-sm hover:shadow-md">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-chart-simple text-primary text-sm"></i></div>
-                        <span class="text-sm truncate">Uploads</span>
-                    </a>
-                </nav>
-
-                <div class="mt-auto">
-                    <button onclick="api.logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors font-medium mb-3">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-sign-out-alt text-slate-500 transition-colors pointer-events-none text-sm"></i></div>
-                        <span class="text-sm">Logout</span>
+            <div class="w-full max-w-2xl space-y-6">
+                <!-- Page Title with Back Button -->
+                <div class="flex items-start gap-4">
+                    <button onclick="window.smartBack('dashboard.html')" class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm shrink-0 mt-1" title="Go Back">
+                        <i class="fa-solid fa-arrow-left text-slate-600 text-sm"></i>
                     </button>
-                    <div onclick="openProfileModal()" class="bg-[#1c1d22] rounded-xl p-3 flex items-center gap-3 border border-white/5 shadow-lg cursor-pointer hover:bg-white/5 hover:border-white/10 transition-all group">
-                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[#ff6b6b] border border-white/10 shrink-0 shadow-inner group-hover:border-[#ff6b6b] transition-colors">
-                            <i class="fa-solid fa-user-astronaut text-xs"></i>
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold mb-1">
+                            <i class="fa-solid fa-cloud-arrow-up text-xs"></i> Document Studio
                         </div>
-                        <div class="overflow-hidden">
-                            <p class="text-xs font-bold text-white truncate group-hover:text-[#ff6b6b] transition-colors" id="sidebar-name">Loading...</p>
-                            <p class="text-[8px] text-slate-400 font-bold tracking-widest uppercase truncate mt-0.5">Pro Tier Plan</p>
-                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                            Upload Academic Document
+                        </h1>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                            Upload course notes or past exam question papers in PDF format for AI synthesis and focus tracking.
+                        </p>
                     </div>
                 </div>
-            </aside>
 
-            <!-- Main Workspace -->
-            <main class="flex-1 overflow-y-auto pr-1 pb-4 min-h-0 flex flex-col items-center">
-                <div class="flex flex-col flex-1 min-h-0 w-full items-center">
-            <header class="mb-10 w-full max-w-2xl text-center xl:text-left">
-                <h1 class="text-4xl xl:text-5xl font-extrabold tracking-tight mb-2 text-white">Upload Document</h1>
-                <p class="text-slate-400 font-medium tracking-wide max-w-xl leading-relaxed text-sm">Add a new PDF note or PYQ to your resources to begin AI synthesis.</p>
-            </header>
+                <!-- Alert Message -->
+                <div id="status-msg" class="hidden p-4 rounded-xl text-xs font-semibold border flex items-center gap-3">
+                    <i id="status-icon" class="fa-solid fa-circle-check shrink-0 text-base"></i>
+                    <div id="status-content" class="flex-1"></div>
+                </div>
 
-            <form id="upload-form" class="bg-cardbg p-10 rounded-[2.5rem] relative overflow-hidden shadow-2xl border border-white/5 w-full max-w-2xl">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-[#08e3d6]/10 rounded-full blur-[80px] pointer-events-none"></div>
-
-                <div class="space-y-8 relative z-10">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Upload Form Card -->
+                <form id="upload-form" class="saas-card p-6 sm:p-8 bg-white space-y-6">
+                    
+                    <!-- Subject & Semester Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Subject Name</label>
-                            <input type="text" id="subject" required class="w-full bg-[#050505] text-white text-sm font-bold rounded-2xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-primary border border-white/5" placeholder="e.g. Data Structures">
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[11px]">Subject Name *</label>
+                            <input type="text" id="subject" required placeholder="e.g. Data Structures, Applied Mathematics" class="w-full saas-input text-xs">
                         </div>
+
                         <div>
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Semester</label>
-                            <select id="semester" required class="w-full bg-[#050505] text-white text-sm font-bold rounded-2xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-primary border border-white/5 appearance-none">
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[11px]">Semester *</label>
+                            <select id="semester" required class="w-full saas-input text-xs font-semibold cursor-pointer">
                                 <option value="1">Semester 1</option>
                                 <option value="2">Semester 2</option>
-                                <option value="3">Semester 3</option>
+                                <option value="3" selected>Semester 3</option>
                                 <option value="4">Semester 4</option>
                                 <option value="5">Semester 5</option>
                                 <option value="6">Semester 6</option>
@@ -136,21 +172,24 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Document Type & Dynamic Fields -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Document Type</label>
-                            <select id="type" required class="w-full bg-[#050505] text-white text-sm font-bold rounded-2xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-primary border border-white/5 appearance-none">
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[11px]">Category *</label>
+                            <select id="type" required class="w-full saas-input text-xs font-semibold cursor-pointer">
                                 <option value="Note">Class Notes</option>
                                 <option value="PYQ">Past Paper (PYQ)</option>
                             </select>
                         </div>
-                        <div id="year-container" class="opacity-30 pointer-events-none transition-opacity">
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Year (PYQs)</label>
-                            <input type="text" id="year" class="w-full bg-[#050505] text-white text-sm font-bold rounded-2xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-primary border border-white/5" placeholder="e.g. 2023">
+
+                        <div id="year-container" class="opacity-40 pointer-events-none transition-all">
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[11px]">Exam Year (PYQs)</label>
+                            <input type="text" id="year" placeholder="e.g. 2024" class="w-full saas-input text-xs">
                         </div>
-                        <div id="examType-container" class="opacity-30 pointer-events-none transition-opacity">
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Exam (PYQs)</label>
-                            <select id="examType" class="w-full bg-[#050505] text-white text-sm font-bold rounded-2xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-primary border border-white/5 appearance-none">
+
+                        <div id="examType-container" class="opacity-40 pointer-events-none transition-all">
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[11px]">Exam Term (PYQs)</label>
+                            <select id="examType" class="w-full saas-input text-xs font-semibold cursor-pointer">
                                 <option value="midsem">Midsem</option>
                                 <option value="endsem">Endsem</option>
                                 <option value="backlog">Backlog</option>
@@ -158,45 +197,81 @@
                         </div>
                     </div>
 
+                    <!-- PDF File Drag & Drop Zone -->
                     <div>
-                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">PDF File</label>
-                        <div class="border border-dashed border-white/20 rounded-3xl p-10 text-center hover:border-primary/50 transition-colors bg-[#050505]">
-                            <input type="file" id="file" accept=".pdf" required class="hidden">
-                            <label for="file" class="cursor-pointer flex flex-col items-center">
-                                <div class="w-16 h-16 rounded-[1.5rem] bg-[#1d2630] text-primary flex items-center justify-center text-3xl mb-4 shadow-inner">
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider text-[11px]">Document File (PDF, TXT, DOCX) *</label>
+                        <div id="drop-zone" class="border-2 border-dashed border-slate-200 hover:border-indigo-400 bg-slate-50/70 hover:bg-indigo-50/20 rounded-2xl p-8 text-center transition-all cursor-pointer">
+                            <input type="file" id="file" accept=".pdf,.txt,.docx,.doc,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required class="hidden">
+                            <label for="file" class="cursor-pointer flex flex-col items-center pointer-events-none">
+                                <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-3 border border-indigo-100 shadow-sm">
                                     <i class="fa-solid fa-cloud-arrow-up"></i>
                                 </div>
-                                <span class="text-white font-extrabold text-lg mb-1" id="file-name">Click to browse file</span>
-                                <span class="text-[10px] font-black tracking-widest uppercase text-slate-500 mt-2">Only PDF files are supported</span>
+                                <span class="text-sm font-bold text-slate-900 mb-1" id="file-name">Click or drag document file here</span>
+                                <span class="text-xs text-slate-400 font-medium" id="file-size-info">PDF, TXT, or DOCX up to 50MB supported</span>
                             </label>
                         </div>
                     </div>
 
-                    <div id="status-msg" class="text-xs font-bold text-center hidden p-4 rounded-2xl border"></div>
-                </div>
+                    <!-- Submit Button -->
+                    <div class="pt-2">
+                        <button type="submit" id="main-upload-btn" class="btn-primary w-full py-3.5 text-sm font-bold shadow-md shadow-indigo-100">
+                            <i class="fa-solid fa-arrow-up-from-bracket text-xs"></i>
+                            <span id="btn-text">Submit Document</span>
+                        </button>
+                    </div>
+                </form>
 
-                <div class="mt-10 pb-4">
-                    <button type="submit" id="main-upload-btn" class="w-full py-5 rounded-full bg-gradient-to-r from-primary to-[#06b8ad] text-black text-lg font-extrabold transition-all shadow-[0_0_20px_rgba(8,227,214,0.4)] hover:shadow-[0_0_30px_rgba(8,227,214,0.6)] hover:scale-[1.02] cursor-pointer">
-                        <i class="fa-solid fa-arrow-up-from-bracket mr-2"></i> Submit Document
-                    </button>
+                <!-- Help Info -->
+                <div class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 text-xs text-indigo-900 flex items-start gap-3">
+                    <i class="fa-solid fa-circle-info text-indigo-600 text-sm shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold">Private & Encrypted:</span> Your uploaded documents are exclusively tied to your scholar account. They are indexed for AI viva questions and will appear immediately in your Notes or PYQs library.
+                    </div>
                 </div>
-            </form>
+            </div>
         </main>
     </div>
 
-    <script src="js/api.js"></script>
-    <script>
-        if(!api.token) window.location.href = 'auth.html';
+    <!-- Mobile Navigation Bottom Bar -->
+    <nav class="lg:hidden bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center sticky bottom-0 z-40 text-[10px] font-bold text-slate-500">
+        <a href="dashboard.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-shapes text-sm"></i>
+            <span>Dash</span>
+        </a>
+        <a href="notes.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-book-open text-sm"></i>
+            <span>Notes</span>
+        </a>
+        <a href="pyqs.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-regular fa-file-lines text-sm"></i>
+            <span>PYQs</span>
+        </a>
+        <a href="upload.html" class="flex flex-col items-center gap-1 text-indigo-600">
+            <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+            <span>Upload</span>
+        </a>
+        <a href="reports.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-chart-line text-sm"></i>
+            <span>Reports</span>
+        </a>
+    </nav>
 
+    <script>
+        api.requireAuth();
+
+        // Render Scholar name & avatar
         try {
             const userStr = localStorage.getItem('prepdeck_user');
-            if(userStr) {
+            if (userStr) {
                 const user = JSON.parse(userStr);
-                document.getElementById('sidebar-name').innerText = user?.name?.split(' ')[0] || 'Scholar';
-                document.getElementById('top-avatar').innerHTML = user?.name ? user.name.charAt(0).toUpperCase() : '?'; 
+                document.getElementById('sidebar-name').innerText = user?.name || 'Scholar';
+                const initials = user?.name ? user.name.charAt(0).toUpperCase() : '?';
+                document.getElementById('sidebar-avatar').innerText = initials;
+                const mobileAvatar = document.getElementById('mobile-top-avatar');
+                if (mobileAvatar) mobileAvatar.innerText = initials;
             }
         } catch(e) {
-            console.error("Local user load error:", e);
+            console.warn("User load warning:", e);
         }
 
         const typeSelect = document.getElementById('type');
@@ -206,84 +281,170 @@
         const examTypeInput = document.getElementById('examType');
         const fileInput = document.getElementById('file');
         const fileNameDisplay = document.getElementById('file-name');
+        const fileSizeInfo = document.getElementById('file-size-info');
         const form = document.getElementById('upload-form');
         const statusMsg = document.getElementById('status-msg');
+        const statusIcon = document.getElementById('status-icon');
+        const statusContent = document.getElementById('status-content');
         const submitBtn = document.getElementById('main-upload-btn');
+        const btnText = document.getElementById('btn-text');
+        const dropZone = document.getElementById('drop-zone');
+
+        function updateTypeFields(val) {
+            if (val === 'PYQ') {
+                yearContainer.classList.remove('opacity-40', 'pointer-events-none');
+                examTypeContainer.classList.remove('opacity-40', 'pointer-events-none');
+                yearInput.required = true;
+                if (!yearInput.value) yearInput.value = new Date().getFullYear();
+            } else {
+                yearContainer.classList.add('opacity-40', 'pointer-events-none');
+                examTypeContainer.classList.add('opacity-40', 'pointer-events-none');
+                yearInput.required = false;
+                yearInput.value = '';
+            }
+        }
 
         typeSelect.addEventListener('change', (e) => {
-            if(e.target.value === 'PYQ') {
-                yearContainer.classList.remove('opacity-30', 'pointer-events-none');
-                examTypeContainer.classList.remove('opacity-30', 'pointer-events-none');
-                yearInput.required = true;
-                examTypeInput.required = true;
-            } else {
-                yearContainer.classList.add('opacity-30', 'pointer-events-none');
-                examTypeContainer.classList.add('opacity-30', 'pointer-events-none');
-                yearInput.required = false;
-                examTypeInput.required = false;
-                yearInput.value = '';
-                examTypeInput.value = 'midsem';
-            }
+            updateTypeFields(e.target.value);
         });
 
+        // Initialize from URL parameter ?type=PYQ or ?type=Note
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('type') === 'PYQ') {
+            typeSelect.value = 'PYQ';
+            updateTypeFields('PYQ');
+        }
+
+        // File selection handling
         fileInput.addEventListener('change', (e) => {
-            if(e.target.files.length > 0) {
-                fileNameDisplay.innerText = e.target.files[0].name;
-                fileNameDisplay.classList.remove('text-white');
-                fileNameDisplay.classList.add('text-[#08e3d6]');
-            }
+            handleFileSelection(e.target.files[0]);
         });
 
-        form.addEventListener('submit', async (e) => {
+        // Drag & Drop
+        dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            
-            const file = fileInput.files[0];
-            if(!file || file.type !== 'application/pdf') {
-                showStatus('Please select a valid PDF file.', 'error');
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-50/40');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/40');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/40');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelection(e.dataTransfer.files[0]);
+            }
+        });
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        function handleFileSelection(file) {
+            if (!file) return;
+            const validExts = /\.(pdf|txt|docx|doc)$/i;
+            if (!validExts.test(file.name)) {
+                showStatus('Invalid file format. Please choose a PDF, TXT, or DOCX document.', 'error');
+                fileInput.value = '';
+                fileNameDisplay.innerText = 'Click or drag document file here';
+                fileSizeInfo.innerText = 'PDF, TXT, or DOCX up to 50MB supported';
+                return;
+            }
+            if (file.size > 50 * 1024 * 1024) {
+                showStatus('File exceeds the 50MB size limit.', 'error');
+                fileInput.value = '';
                 return;
             }
 
-            submitBtn.innerText = 'Uploading...';
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+            fileNameDisplay.innerText = file.name;
+            fileSizeInfo.innerText = `${sizeMb} MB • Ready to upload`;
+            statusMsg.classList.add('hidden');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const file = fileInput.files[0];
+            if (!file) {
+                showStatus('Please select a PDF document to upload.', 'error');
+                return;
+            }
+
+            const subject = document.getElementById('subject').value.trim();
+            const semester = document.getElementById('semester').value;
+            const type = typeSelect.value;
+
+            if (!subject) {
+                showStatus('Please enter a subject name.', 'error');
+                return;
+            }
+
+            // Disable submit to prevent duplicate submissions
             submitBtn.disabled = true;
+            btnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Uploading Document...';
             statusMsg.classList.add('hidden');
 
             const formData = new FormData();
-            formData.append('subject', document.getElementById('subject').value);
-            formData.append('semester', document.getElementById('semester').value);
-            formData.append('type', document.getElementById('type').value);
+            formData.append('subject', subject);
+            formData.append('semester', semester);
+            formData.append('type', type);
             formData.append('file', file);
-            
-            if(typeSelect.value === 'PYQ') {
-                formData.append('year', yearInput.value);
-                formData.append('examType', examTypeInput.value);
+
+            if (type === 'PYQ') {
+                formData.append('year', yearInput.value.trim() || new Date().getFullYear().toString());
+                formData.append('examType', examTypeInput.value || 'midsem');
             }
 
             try {
-                await api.uploadDocument(formData);
-                showStatus('Document uploaded successfully!', 'success');
+                const result = await api.uploadDocument(formData);
+                const targetLibrary = type === 'PYQ' ? 'pyqs.html' : 'notes.html';
+                const typeLabel = type === 'PYQ' ? 'Past Paper' : 'Note';
+
+                showStatus(`
+                    <div>
+                        <p class="font-bold text-sm text-emerald-900">${typeLabel} uploaded successfully!</p>
+                        <p class="text-xs text-emerald-700 mt-1">Saved to your library as "${result.subject}".</p>
+                        <div class="mt-3 flex gap-2">
+                            <a href="${targetLibrary}" class="btn-primary text-xs py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700">View in Library</a>
+                            <button type="button" onclick="resetFormState()" class="btn-secondary text-xs py-1.5 px-3">Upload Another</button>
+                        </div>
+                    </div>
+                `, 'success');
+
+                window.showToast('Document uploaded successfully!', 'success');
                 form.reset();
-                fileNameDisplay.innerText = 'Click to browse file';
-                fileNameDisplay.classList.add('text-white');
-                fileNameDisplay.classList.remove('text-[#08e3d6]');
-                if(typeSelect.value !== 'PYQ') {
-                    yearContainer.classList.add('opacity-30', 'pointer-events-none');
-                    examTypeContainer.classList.add('opacity-30', 'pointer-events-none');
-                }
-            } catch(err) {
-                showStatus(err.message || 'Error uploading document', 'error');
+                fileNameDisplay.innerText = 'Click or drag PDF file here';
+                fileSizeInfo.innerText = 'PDF up to 50MB supported';
+                updateTypeFields(typeSelect.value);
+
+            } catch (err) {
+                showStatus(err.message || 'Error uploading document. Please try again.', 'error');
+                window.showToast(err.message || 'Upload failed', 'error');
             } finally {
-                submitBtn.innerText = 'Upload Document';
                 submitBtn.disabled = false;
+                btnText.innerText = 'Submit Document';
             }
         });
 
-        function showStatus(msg, type) {
-            statusMsg.innerText = msg;
-            statusMsg.classList.remove('hidden', 'bg-red-500/10', 'border-red-500/30', 'text-red-400', 'bg-[#08e3d6]/10', 'border-[#08e3d6]/30', 'text-[#08e3d6]');
-            if(type === 'error') {
-                statusMsg.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-400');
+        function resetFormState() {
+            form.reset();
+            statusMsg.classList.add('hidden');
+            fileNameDisplay.innerText = 'Click or drag PDF file here';
+            fileSizeInfo.innerText = 'PDF up to 50MB supported';
+            updateTypeFields(typeSelect.value);
+        }
+
+        function showStatus(msgHtml, type = 'error') {
+            statusMsg.classList.remove('hidden', 'bg-rose-50', 'border-rose-200', 'text-rose-900', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-900');
+            if (type === 'error') {
+                statusMsg.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-900');
+                statusIcon.className = 'fa-solid fa-circle-exclamation shrink-0 text-rose-500 text-lg';
+                statusContent.innerHTML = `<span class="font-bold">${msgHtml}</span>`;
             } else {
-                statusMsg.classList.add('bg-[#08e3d6]/10', 'border-[#08e3d6]/30', 'text-[#08e3d6]');
+                statusMsg.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-900');
+                statusIcon.className = 'fa-solid fa-circle-check shrink-0 text-emerald-500 text-lg';
+                statusContent.innerHTML = msgHtml;
             }
         }
     </script>

@@ -10,6 +10,7 @@ server/.env
 # User uploads / generated files
 server/uploads/*
 !server/uploads/.gitkeep
+server/backups/
 
 # IDE and OS files
 .vscode/

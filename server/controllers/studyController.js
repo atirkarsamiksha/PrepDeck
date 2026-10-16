@@ -1,10 +1,52 @@
+// Ensure DOMMatrix polyfill is defined for PDF parsing in Node 22+
+if (typeof DOMMatrix === 'undefined') {
+  global.DOMMatrix = class DOMMatrix {};
+}
+
 const StudySession = require('../models/StudySession');
 const Document = require('../models/Document');
 const QuizAttempt = require('../models/QuizAttempt');
+const InterviewAttempt = require('../models/InterviewAttempt');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { PDFParse } = require('pdf-parse');
 const fs = require('fs');
 const path = require('path');
+
+function extractJsonFromText(raw) {
+  if (!raw) return null;
+  let cleaned = raw.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  }
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    const firstBrace = cleaned.search(/[{\[]/);
+    const lastBrace = Math.max(cleaned.lastIndexOf('}'), cleaned.lastIndexOf(']'));
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      const sub = cleaned.substring(firstBrace, lastBrace + 1);
+      return JSON.parse(sub);
+    }
+    throw e;
+  }
+}
+
+async function extractPdfText(doc) {
+  if (!doc || !doc.filepath) return '';
+  const absolutePath = path.join(__dirname, '..', doc.filepath);
+  if (!fs.existsSync(absolutePath)) return '';
+
+  try {
+    const dataBuffer = fs.readFileSync(absolutePath);
+    const parser = new PDFParse({ data: dataBuffer });
+    const pdfData = await parser.getText();
+    await parser.destroy();
+    return (pdfData.text || '').substring(0, 15000);
+  } catch (err) {
+    console.warn("Could not parse PDF text:", err.message);
+    return '';
+  }
+}
 
 const saveSessionStats = async (req, res) => {
   try {
@@ -12,12 +54,12 @@ const saveSessionStats = async (req, res) => {
 
     const session = await StudySession.create({
       user: req.user._id,
-      document: documentId,
-      startTime,
-      endTime,
-      durationMs,
-      focusedMs,
-      distractedMs
+      document: documentId || null,
+      startTime: startTime || Date.now(),
+      endTime: endTime || Date.now(),
+      durationMs: durationMs || 0,
+      focusedMs: focusedMs || 0,
+      distractedMs: distractedMs || 0
     });
 
     res.status(201).json(session);
@@ -49,355 +91,352 @@ const getUserStats = async (req, res) => {
   }
 };
 
+const CANDIDATE_MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite"
+];
+
+async function generateWithGemini(prompt) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not configured in server environment.');
+  }
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  let lastError = null;
+
+  for (const modelName of CANDIDATE_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      return (await result.response).text();
+    } catch (err) {
+      lastError = err;
+      console.warn(`Gemini model ${modelName} failed (${err.message}). Trying fallback...`);
+    }
+  }
+  throw lastError || new Error('All Gemini candidate models failed.');
+}
+
 const generateInterviewQuestions = async (req, res) => {
   try {
-    const { documentId } = req.body;
+    const { documentId, topic, difficultyLevel = 'medium', questionCount = 5 } = req.body;
 
-    // Check for API key - IF NOT exists, return MOCK DATA!
     if (!process.env.GEMINI_API_KEY) {
-      console.log("No API Key detected! Sending Mock Questions instead.");
-      return setTimeout(() => res.json({
-        isMock: true,
-        questions: [
-          "What are the main principles outlined in this document?",
-          "Can you provide a real-world application of this concept?",
-          "How would you explain the fundamental mechanics to a beginner?",
-          "What is the most significant challenge discussed here?",
-          "Summarize the conclusion in two sentences."
-        ]
-      }), 1500);
+      return res.status(500).json({ 
+        message: 'GEMINI_API_KEY is not configured in server environment.' 
+      });
     }
-
-    const doc = await Document.findById(documentId);
-    if (!doc) return res.status(404).json({ message: 'Document not found' });
-
-    // Ensure we are reading correct file path. It is stored as /uploads/filename
-    const absolutePath = path.join(__dirname, '..', doc.filepath);
 
     let pdfText = '';
-    try {
-      const dataBuffer = fs.readFileSync(absolutePath);
-      const parser = new PDFParse({ data: dataBuffer });
-      const pdfData = await parser.getText();
-      pdfText = pdfData.text.substring(0, 15000); // limit to 15k chars to fit context if needed
-      await parser.destroy();
-    } catch (err) {
-      console.warn("Could not parse PDF, using empty string. ", err);
-      pdfText = 'No readable text extracted. Please assess general concepts of ' + doc.subject;
+    let subjectName = topic || 'General Academic Topic';
+
+    if (documentId) {
+      const doc = await Document.findOne({ _id: documentId, uploader: req.user._id });
+      if (!doc) {
+        return res.status(404).json({ message: 'Document not found or access denied' });
+      }
+      subjectName = doc.subject;
+      pdfText = await extractPdfText(doc);
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const count = Math.min(Math.max(parseInt(questionCount) || 5, 2), 10);
+    const difficulty = ['easy', 'medium', 'hard'].includes(difficultyLevel) ? difficultyLevel : 'medium';
 
-    const prompt = `Based exclusively on this study material text, generate exactly 10 questions to test the student: 5 conceptual questions (understanding-based), 3 short-answer questions (direct recall), 2 application-based questions (real-world). Return ONLY a raw JSON array of strings containing the questions. Do not use markdown blocks. Material: \n\n${pdfText}`;
+    const prompt = `You are a university professor conducting an interactive technical viva / interview.
+Subject: ${subjectName}
+Specific Topic Focus: ${topic || 'All core concepts from the material'}
+Difficulty Level: ${difficulty}
+Generate exactly ${count} distinct interview questions to test the student.
+The questions should test comprehension, concept explanation, and practical application.
+Return strictly a valid JSON array of strings containing the questions only. No markdown formatting, no explanations.
+Study Material Excerpt:
+${pdfText || 'Assess standard syllabus concepts for ' + subjectName}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let textOut = response.text().trim();
+    const textOut = await generateWithGemini(prompt);
+    const questions = extractJsonFromText(textOut);
 
-    if (textOut.startsWith('\`\`\`json')) textOut = textOut.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
-    else if (textOut.startsWith('\`\`\`')) textOut = textOut.replace(/\`\`\`/g, '');
+    if (!Array.isArray(questions)) {
+      throw new Error("Invalid question format received from AI model.");
+    }
 
-    const questions = JSON.parse(textOut);
-    res.json({ questions });
+    res.json({ questions, topic: subjectName, difficultyLevel: difficulty });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error('generateInterviewQuestions error:', error);
+    res.status(500).json({ message: error.message || 'Failed to generate interview questions' });
+  }
+};
+
+const generateFollowUpQuestion = async (req, res) => {
+  try {
+    const { documentId, currentQuestion, studentAnswer, topic } = req.body;
+
+    if (!currentQuestion || !studentAnswer) {
+      return res.status(400).json({ message: 'Current question and student answer required.' });
+    }
+
+    // If answer is empty or just "[No Answer Provided]", don't ask follow-up
+    if (!studentAnswer.trim() || studentAnswer.includes('[No Answer Provided]')) {
+      return res.json({ followUpQuestion: null });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({ followUpQuestion: null });
+    }
+
+    let pdfText = '';
+    if (documentId) {
+      const doc = await Document.findOne({ _id: documentId, uploader: req.user._id });
+      if (doc) pdfText = await extractPdfText(doc);
+    }
+
+    const prompt = `You are conducting a live oral viva interview with a student.
+Topic: ${topic || 'Academic concept'}
+Question asked: "${currentQuestion}"
+Student's answer: "${studentAnswer}"
+
+Evaluate if a targeted follow-up question is warranted to probe deeper into their reasoning, clarify an ambiguous statement, or ask for a real-world example.
+If a follow-up is beneficial, respond with a JSON object:
+{ "hasFollowUp": true, "followUpQuestion": "Your short follow-up question here" }
+If the answer was already comprehensive or if moving to the next question is better, respond with:
+{ "hasFollowUp": false, "followUpQuestion": null }
+
+Context Material:
+${pdfText ? pdfText.substring(0, 5000) : 'General concepts'}`;
+
+    const textOut = await generateWithGemini(prompt);
+    const parsed = extractJsonFromText(textOut);
+
+    res.json({
+      hasFollowUp: !!parsed?.hasFollowUp,
+      followUpQuestion: parsed?.hasFollowUp ? parsed.followUpQuestion : null
+    });
+  } catch (error) {
+    console.warn('generateFollowUpQuestion warning:', error.message);
+    res.json({ hasFollowUp: false, followUpQuestion: null });
   }
 };
 
 const evaluateInterviewSession = async (req, res) => {
   try {
-    const { documentId, studentAnswersArray, totalTime, focusedTime, distractedTime, faceDetectionLog, distractionEvents, tabSwitchCount } = req.body;
+    const { 
+      documentId, 
+      studentAnswersArray = [], 
+      totalTime = 0, 
+      focusedTime = 0, 
+      distractedTime = 0, 
+      faceDetectionLog = 'Consistent', 
+      distractionEvents = 0, 
+      tabSwitchCount = 0,
+      difficultyLevel = 'medium',
+      topic = 'General'
+    } = req.body;
 
-    // Check for API key - IF NOT exists, return MOCK DATA!
     if (!process.env.GEMINI_API_KEY) {
-      console.log("No API Key detected! Sending Mock Evaluation Report instead.");
-      return setTimeout(() => res.json({
-        "evaluation": [
-          {
-            "question": "MOCK: What are the main principles outlined?",
-            "student_answer": (studentAnswersArray && studentAnswersArray[0]) ? studentAnswersArray[0].answer : "...",
-            "expected_answer": "The main principles focus on core data storage architecture and low latency retrieval.",
-            "score": 8,
-            "correctness": "Partially Correct",
-            "feedback": "You grasped the core concept, but missed some secondary points. Good effort overall."
-          }
-        ],
-        "report": {
-          "average_score": 8.0,
-          "focus_percentage": totalTime > 0 ? Math.round((focusedTime / totalTime) * 100) : 100,
-          "discipline_level": "Highly Focused",
-          "summary": "Great study session! You demonstrated solid focus and decent grasp of the basic subject matter. (This is a mock report since no API key was provided)",
-          "strengths": ["Understanding core principles", "Focus and attention"],
-          "weaknesses": ["Missed deeper applications", "Short answers"],
-          "behavior_analysis": "You maintained excellent focus with very few distracted moments.",
-          "suggestions": ["Elaborate more on your answers next time.", "Try to connect concepts to real world examples."]
-        }
-      }), 2000);
+      return res.status(500).json({ message: 'GEMINI_API_KEY is not configured.' });
     }
-
-    const doc = await Document.findById(documentId);
-    const absolutePath = path.join(__dirname, '..', doc.filepath);
 
     let pdfText = '';
-    try {
-      const dataBuffer = fs.readFileSync(absolutePath);
-      const parser = new PDFParse({ data: dataBuffer });
-      const pdfData = await parser.getText();
-      pdfText = pdfData.text.substring(0, 15000); // limit text limit
-      await parser.destroy();
-    } catch (err) {
-      pdfText = '';
+    let doc = null;
+    if (documentId) {
+      doc = await Document.findOne({ _id: documentId, uploader: req.user._id });
+      if (doc) pdfText = await extractPdfText(doc);
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const calculatedFocusPct = totalTime > 0 ? Math.min(100, Math.round((focusedTime / totalTime) * 100)) : 100;
 
-    const prompt = `
-You are an advanced AI Study Evaluator inside a smart learning platform called "PrepDeck".
-Your role is to simulate an intelligent viva/interview system that evaluates a student after a study session using their study material, answers, and behavior data.
+    const prompt = `You are an expert university examiner evaluating a student's live viva / oral interview for PrepDeck.
 
----
-## INPUT DATA:
-1. Study Material (Extracted PDF Text):
-${pdfText}
+Input Data:
+1. Topic / Material Text:
+${pdfText || 'Evaluate subject matter based on standard curriculum for: ' + (doc?.subject || topic)}
 
-2. Student Answers (in order of questions):
-${JSON.stringify(studentAnswersArray)}
+2. Student Q&A:
+${JSON.stringify(studentAnswersArray, null, 2)}
 
-3. Focus & Behavior Data:
-* Total Study Time: ${totalTime} ms
-* Focused Time: ${focusedTime} ms
-* Distracted Time: ${distractedTime} ms
-* Face Detected Consistency: ${faceDetectionLog}
-* Looking Away Events: ${distractionEvents}
-* Tab Switch Count: ${tabSwitchCount}
+3. Focus & Discipline Data:
+- Total Study/Interview Duration: ${totalTime} ms
+- Focused Duration: ${focusedTime} ms
+- Distracted Duration: ${distractedTime} ms
+- Focus Score: ${calculatedFocusPct}%
+- Distraction Events: ${distractionEvents}
+- Tab Switches: ${tabSwitchCount}
 
----
-## TASKS TO PERFORM:
-STEP 1: ANALYZE STUDY MATERIAL
-STEP 2: [SKIP GENERATION AS QUESTIONS WERE ALREADY ANSWERED]
-STEP 3: EVALUATE STUDENT ANSWERS
-For each question, compare student answer with expected answer, give Score (0-10), Correctness level (Correct / Partially Correct / Incorrect), and Short feedback (What is correct, What is missing, How to improve).
-STEP 4: ANALYZE BEHAVIOR & FOCUS
-Calculate focus % = (Focused Time / Total Time) * 100. Analyze distraction frequency and behavior data. Classify discipline level: Highly Focused / Moderately Focused / Distracted.
-STEP 5: GENERATE FINAL PERFORMANCE REPORT
-Include Overall summary, Average Score, Focus Percentage, Strengths, Weaknesses, Behavior Analysis, Personalized Suggestions.
+Evaluation Tasks:
+1. For each question, score the student's answer out of 10. Determine correctness ('Correct', 'Partially Correct', 'Incorrect'). Provide an expected ideal answer and clear feedback on what was good and what was missing.
+2. Determine average score out of 10.
+3. Classify discipline level: 'Highly Focused' (>=80%), 'Moderately Focused' (50-79%), or 'Needs Attention' (<50%).
+4. Provide an overall summary, 2-3 specific strengths, 2-3 weaknesses, a behavior analysis based on the focus data, and 2 actionable suggestions for improvement.
 
-## OUTPUT FORMAT (STRICT JSON):
+Strict Output JSON structure (no markdown fences, strictly raw JSON):
 {
   "evaluation": [
     {
       "question": "...",
       "student_answer": "...",
-      "expected_answer": "...", // The ideal or expected correct answer based on the study material
-      "score": 7,
-      "correctness": "Partially Correct",
+      "expected_answer": "...",
+      "score": 8,
+      "correctness": "Correct",
       "feedback": "..."
     }
   ],
   "report": {
-    "average_score": 7.5,
-    "focus_percentage": 82,
-    "discipline_level": "Moderately Focused",
+    "average_score": 8.0,
+    "focus_percentage": ${calculatedFocusPct},
+    "discipline_level": "Highly Focused",
     "summary": "...",
-    "strengths": ["..."],
-    "weaknesses": ["..."],
+    "strengths": ["...", "..."],
+    "weaknesses": ["...", "..."],
     "behavior_analysis": "...",
-    "suggestions": ["..."]
+    "suggestions": ["...", "..."]
   }
-}
+}`;
 
-IMPORTANT RULES:
-* Do NOT hallucinate beyond the given study material
-* Keep feedback concise but meaningful
-* Maintain academic tone
-* Ensure JSON is clean and valid (no extra text outside JSON, no markdown backticks like \`\`\`json)
-`;
+    const textOut = await generateWithGemini(prompt);
+    const finalJson = extractJsonFromText(textOut);
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let rawOutput = response.text().trim();
+    // Persist to MongoDB InterviewAttempt collection!
+    const questionsForDb = (finalJson.evaluation || []).map(e => ({
+      question: e.question,
+      studentAnswer: e.student_answer,
+      expectedAnswer: e.expected_answer,
+      score: e.score,
+      correctness: e.correctness,
+      feedback: e.feedback
+    }));
 
-    if (rawOutput.startsWith('\`\`\`json')) rawOutput = rawOutput.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
-    else if (rawOutput.startsWith('\`\`\`')) rawOutput = rawOutput.replace(/\`\`\`/g, '');
+    const attempt = await InterviewAttempt.create({
+      user: req.user._id,
+      document: documentId || null,
+      topic: topic || doc?.subject || 'General',
+      difficultyLevel: difficultyLevel || 'medium',
+      score: finalJson.report?.average_score || 0,
+      totalQuestions: questionsForDb.length,
+      disciplineLevel: finalJson.report?.discipline_level || 'Moderately Focused',
+      focusPercentage: finalJson.report?.focus_percentage || calculatedFocusPct,
+      questions: questionsForDb,
+      report: finalJson.report || {},
+      sessionStats: {
+        totalTimeMs: totalTime,
+        focusedTimeMs: focusedTime,
+        distractedTimeMs: distractedTime,
+        distractionEvents
+      }
+    });
 
-    const finalJson = JSON.parse(rawOutput);
-
-    res.json(finalJson);
+    res.json({
+      ...finalJson,
+      attemptId: attempt._id
+    });
   } catch (error) {
-    console.error(error);
+    console.error('evaluateInterviewSession error:', error);
+    res.status(500).json({ message: error.message || 'Evaluation failed' });
+  }
+};
+
+const getInterviewHistory = async (req, res) => {
+  try {
+    const history = await InterviewAttempt.find({ user: req.user._id })
+      .populate('document', 'subject originalName type semester')
+      .sort({ attemptedAt: -1 });
+    res.json(history);
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 const generateQuiz = async (req, res) => {
   try {
-    const { documentId, difficultyLevel } = req.body;
-    const doc = await Document.findById(documentId);
-    if (!doc) return res.status(404).json({ message: 'Document not found' });
+    const { documentId, difficultyLevel = 'medium' } = req.body;
+    const doc = await Document.findOne({ _id: documentId, uploader: req.user._id });
+    if (!doc) return res.status(404).json({ message: 'Document not found or access denied' });
 
     if (!process.env.GEMINI_API_KEY) {
-      console.log("No API Key detected! Sending Mock Quiz instead.");
-      return setTimeout(() => res.json({
-        isMock: true,
-        questions: [
-          {
-            questionText: "What is the primary function of this concept?",
-            questionType: "MCQ",
-            options: ["To store data", "To compute data", "To transfer data", "To delete data"],
-            correctAnswer: "To store data",
-            explanation: "As stated on page 1, the primary function is data storage."
-          },
-          {
-            questionText: "The system is entirely stateless.",
-            questionType: "TF",
-            options: ["True", "False"],
-            correctAnswer: "False",
-            explanation: "The document mentions a state machine is used."
-          },
-          {
-            questionText: "Explain the main benefit of this approach.",
-            questionType: "ShortAnswer",
-            options: [],
-            correctAnswer: "It reduces latency.",
-            explanation: "Latency reduction is the core benefit described."
-          }
-        ]
-      }), 1500);
+      return res.status(500).json({ message: 'GEMINI_API_KEY is not configured.' });
     }
 
-    const absolutePath = path.join(__dirname, '..', doc.filepath);
-    let pdfText = '';
-    try {
-      const dataBuffer = fs.readFileSync(absolutePath);
-      const parser = new PDFParse({ data: dataBuffer });
-      const pdfData = await parser.getText();
-      pdfText = pdfData.text.substring(0, 15000);
-      await parser.destroy();
-    } catch (err) {
-      console.warn("Could not parse PDF, using empty string. ", err);
-    }
+    const pdfText = await extractPdfText(doc);
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    const prompt = `Based exclusively on this study material text, generate a quiz with 3 MCQs, 2 True/False, and 2 Short Answer questions. The difficulty should be ${difficultyLevel || 'medium'}. 
-Return ONLY a raw JSON array. For each question, use this exact structure:
+    const prompt = `Based exclusively on this study material text, generate a quiz with 3 MCQs (Multiple Choice), 2 True/False, and 2 Short Answer questions. The difficulty should be ${difficultyLevel}.
+Return strictly a valid JSON array of objects with no markdown backticks.
+Each object must follow this exact structure:
 {
   "questionText": "...",
   "questionType": "MCQ" | "TF" | "ShortAnswer",
-  "options": ["...", "..."], // For MCQ/TF. Empty array for ShortAnswer.
+  "options": ["Option A", "Option B", "Option C", "Option D"], // for MCQ: 4 options. For TF: ["True", "False"]. For ShortAnswer: []
   "correctAnswer": "...",
-  "explanation": "..." // Short explanation of why the answer is correct
+  "explanation": "..."
 }
-Material: \n\n${pdfText}`;
+Material Text:
+${pdfText || 'Generate academic questions based on ' + doc.subject}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let textOut = response.text().trim();
+    const textOut = await generateWithGemini(prompt);
+    const questions = extractJsonFromText(textOut);
 
-    if (textOut.startsWith('\`\`\`json')) textOut = textOut.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
-    else if (textOut.startsWith('\`\`\`')) textOut = textOut.replace(/\`\`\`/g, '');
-
-    const questions = JSON.parse(textOut);
     res.json({ questions });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error('generateQuiz error:', error);
+    res.status(500).json({ message: error.message || 'Failed to generate quiz' });
   }
 };
 
 const evaluateQuiz = async (req, res) => {
   try {
-    const { documentId, difficultyLevel, questionsAndAnswers } = req.body;
-    
-    let score = 0;
-    const evaluatedQuestions = [];
+    const { documentId, difficultyLevel = 'medium', questionsAndAnswers = [] } = req.body;
 
-    // Check if mock
-    if (!process.env.GEMINI_API_KEY) {
-      console.log("No API Key detected! Mock Evaluation");
-      // Calculate basic mock score
-      for (const q of questionsAndAnswers) {
-        let isCorrect = false;
-        if (q.questionType === 'ShortAnswer') {
-          // Mock simple check
-          isCorrect = q.studentAnswer && q.studentAnswer.length > 5;
-        } else {
-          isCorrect = q.studentAnswer === q.correctAnswer;
-        }
-        if (isCorrect) score++;
-        evaluatedQuestions.push({
-          ...q,
-          isCorrect
-        });
-      }
-      
-      const attempt = await QuizAttempt.create({
-        user: req.user._id,
-        document: documentId,
-        difficultyLevel,
-        score,
-        totalQuestions: questionsAndAnswers.length,
-        questions: evaluatedQuestions,
-        performanceSummary: "Good effort on this mock quiz!"
-      });
-      return res.status(201).json(attempt);
+    if (documentId) {
+      const doc = await Document.findOne({ _id: documentId, uploader: req.user._id });
+      if (!doc) return res.status(404).json({ message: 'Document not found or access denied' });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ message: 'GEMINI_API_KEY is not configured.' });
+    }
 
-    // We will ask Gemini to evaluate the Short Answers and provide a summary.
-    const prompt = `Evaluate the following quiz attempt. For MCQs and TF, I have the correct answers. For Short Answer, evaluate if the student's answer captures the meaning of the correct answer (leniently).
-Provide a "performanceSummary" of the student's understanding based on the results.
+    const prompt = `Evaluate the following quiz attempt.
+For MCQs and TF questions, check if studentAnswer strictly matches correctAnswer (or option text).
+For ShortAnswer, evaluate leniently whether the student captured the key concept.
+Provide an encouraging and constructive performanceSummary.
 
 Input Data:
 ${JSON.stringify(questionsAndAnswers, null, 2)}
 
-Return ONLY a JSON object with this exact structure:
+Return strictly a valid JSON object:
 {
   "evaluatedQuestions": [
     {
       "questionText": "...",
-      "questionType": "...",
-      "options": [],
+      "questionType": "MCQ",
+      "options": ["..."],
       "correctAnswer": "...",
       "studentAnswer": "...",
-      "isCorrect": true/false,
+      "isCorrect": true,
       "explanation": "..."
     }
   ],
   "performanceSummary": "..."
 }`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let rawOutput = response.text().trim();
+    const textOut = await generateWithGemini(prompt);
+    const evaluation = extractJsonFromText(textOut);
 
-    if (rawOutput.startsWith('\`\`\`json')) rawOutput = rawOutput.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
-    else if (rawOutput.startsWith('\`\`\`')) rawOutput = rawOutput.replace(/\`\`\`/g, '');
-
-    const evaluation = JSON.parse(rawOutput);
-    
-    score = evaluation.evaluatedQuestions.filter(q => q.isCorrect).length;
+    const score = (evaluation.evaluatedQuestions || []).filter(q => q.isCorrect).length;
 
     const attempt = await QuizAttempt.create({
       user: req.user._id,
       document: documentId,
       difficultyLevel,
       score,
-      totalQuestions: evaluation.evaluatedQuestions.length,
-      questions: evaluation.evaluatedQuestions,
-      performanceSummary: evaluation.performanceSummary
+      totalQuestions: evaluation.evaluatedQuestions?.length || questionsAndAnswers.length,
+      questions: evaluation.evaluatedQuestions || questionsAndAnswers,
+      performanceSummary: evaluation.performanceSummary || 'Quiz completed.'
     });
 
     res.status(201).json(attempt);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error('evaluateQuiz error:', error);
+    res.status(500).json({ message: error.message || 'Quiz evaluation failed' });
   }
 };
 
@@ -433,4 +472,16 @@ const getAllQuizHistory = async (req, res) => {
   }
 };
 
-module.exports = { saveSessionStats, getUserStats, generateInterviewQuestions, evaluateInterviewSession, generateQuiz, evaluateQuiz, getQuizHistory, getStudySessionsHistory, getAllQuizHistory };
+module.exports = { 
+  saveSessionStats, 
+  getUserStats, 
+  generateInterviewQuestions, 
+  generateFollowUpQuestion,
+  evaluateInterviewSession, 
+  getInterviewHistory,
+  generateQuiz, 
+  evaluateQuiz, 
+  getQuizHistory, 
+  getStudySessionsHistory, 
+  getAllQuizHistory 
+};

@@ -1,327 +1,474 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - PrepDeck</title>
+    <title>Dashboard — PrepDeck</title>
+    <script>
+        // Immediate Auth Guard before rendering
+        if (!localStorage.getItem('prepdeck_token')) {
+            window.location.replace('auth.html?mode=login');
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
-        darkMode: 'class',
-        theme: { 
-            extend: { 
-                colors: { 
-                    cyanBg: '#08e3d6',
-                    primary: '#08e3d6',
-                    secondary: '#a855f7',
-                    darkbg: '#0a0a0c',
-                    panelbg: '#141416',
-                    cardbg: '#181a1f'
-                },
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif'],
-                }
-            } 
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+              }
+            },
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            }
+          }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        
-        .ring-bg {
-            stroke: #1e1e24;
-            stroke-width: 14;
-            fill: transparent;
-        }
-
-        .ring-progress {
-            stroke: #08e3d6;
-            stroke-width: 14;
-            stroke-linecap: round;
-            fill: transparent;
-            stroke-dasharray: 440;
-            stroke-dashoffset: 440; 
-            transition: stroke-dashoffset 1s ease-in-out;
-            filter: drop-shadow(0px 0px 8px rgba(8, 227, 214, 0.4));
-        }
-        
-        /* Custom scrollbar for main content */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #2a2a30; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3a3a40; }
-    </style>
+    <script src="js/api.js"></script>
 </head>
-<body class="bg-darkbg text-slate-100 h-screen p-4 xl:p-6 flex justify-center font-sans overflow-hidden">
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
 
-    <!-- Centered Max-Width Container -->
-    <div class="max-w-[1400px] w-full flex flex-col h-full overflow-hidden">
-        
-        <!-- Top Navbar -->
-        <header class="w-full flex justify-between items-center mb-4 px-2 shrink-0">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-wand-magic-sparkles text-primary text-2xl drop-shadow-[0_0_10px_rgba(8,227,214,0.3)]"></i>
-                <span class="text-2xl font-bold tracking-tight text-white">PrepDeck</span>
+    <!-- Mobile Top Navigation Header -->
+    <header class="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                <i class="fa-solid fa-graduation-cap text-xs"></i>
             </div>
-            
-            <div class="flex items-center gap-6">
-                <nav class="hidden md:flex gap-6 text-sm font-semibold tracking-wide text-slate-400">
-                    <a href="dashboard.html" class="text-primary cursor-pointer hover:text-white transition-colors">Dash</a>
-                    <a href="notes.html" class="cursor-pointer hover:text-white transition-colors">Notes</a>
-                    <a href="pyqs.html" class="cursor-pointer hover:text-white transition-colors">PYQs</a>
-                    <a href="upload.html" class="cursor-pointer hover:text-white transition-colors">Upload</a>
-                    <a href="reports.html" class="cursor-pointer hover:text-white transition-colors">Reports</a>
-                </nav>
-                <div id="top-avatar" onclick="openProfileModal()" class="w-10 h-10 rounded-full bg-slate-700 overflow-hidden ml-4 shadow-lg border border-slate-600 flex items-center justify-center text-sm font-bold bg-gradient-to-br from-slate-600 to-slate-800 cursor-pointer hover:border-primary transition-colors">
-                    ?
-                </div>
-            </div>
-        </header>
-
-        <!-- Content Area -->
-        <div class="flex flex-1 gap-4 overflow-hidden w-full min-h-0">
-            
-            <!-- Floating Sidebar -->
-            <aside class="w-60 bg-panelbg rounded-3xl p-4 flex flex-col justify-between hidden lg:flex border border-white/5 shadow-2xl h-full flex-shrink-0">
-                <nav class="space-y-1 mt-1">
-                    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 text-white font-semibold transition-colors border border-white/5 shadow-sm hover:shadow-md">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-shapes text-primary text-sm"></i></div>
-                        <span class="text-sm truncate">Dashboard</span>
-                    </a>
-                    <a href="notes.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-book-open text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Study Library</span>
-                    </a>
-                    <a href="pyqs.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-regular fa-file-lines text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Past Papers</span>
-                    </a>
-                    <a href="upload.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-chart-simple text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Uploads</span>
-                    </a>
-                </nav>
-
-                <div class="mt-auto">
-                    <button onclick="api.logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors font-medium mb-3">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-sign-out-alt text-slate-500 transition-colors pointer-events-none text-sm"></i></div>
-                        <span class="text-sm">Logout</span>
-                    </button>
-                    <div onclick="openProfileModal()" class="bg-[#1c1d22] rounded-xl p-3 flex items-center gap-3 border border-white/5 shadow-lg cursor-pointer hover:bg-white/5 hover:border-white/10 transition-all group">
-                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-primary border border-white/10 shrink-0 shadow-inner group-hover:border-primary transition-colors">
-                            <i class="fa-solid fa-user-astronaut text-xs"></i>
-                        </div>
-                        <div class="overflow-hidden">
-                            <p class="text-xs font-bold text-white truncate group-hover:text-primary transition-colors" id="sidebar-name">Scholar</p>
-                            <p class="text-[8px] text-slate-400 font-bold tracking-widest uppercase truncate mt-0.5">Pro Tier Plan</p>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main Workspace -->
-            <main class="flex-1 overflow-y-auto pr-1 pb-4 min-h-0 flex flex-col">
-                <div class="flex flex-col flex-1 min-h-0">
-                    <h1 class="text-3xl font-extrabold tracking-tight mb-0.5 text-white">Welcome back, Scholar.</h1>
-                    <p class="text-slate-400 font-medium tracking-wide mb-4 max-w-lg leading-relaxed text-xs">
-                        Everything you need to learn smarter is here. Access notes, practice PYQs, and stay focused.
-                    </p>
-
-                    <!-- Quick Action Pills -->
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4 flex-shrink-0">
-                        <a href="upload.html" class="bg-cardbg rounded-2xl p-4 flex flex-col items-center justify-center gap-2 border border-white/5 hover:border-white/10 hover:bg-white/[0.03] transition-all cursor-pointer group shadow-xl">
-                            <div class="w-11 h-11 rounded-xl bg-[#1d2630] text-[#08e3d6] flex items-center justify-center text-lg shadow-inner group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-file-arrow-up"></i>
-                            </div>
-                            <span class="font-bold text-xs tracking-wide text-slate-300 group-hover:text-white transition-colors">Upload File</span>
-                        </a>
-
-                        <a href="upload.html" class="bg-cardbg rounded-2xl p-4 flex flex-col items-center justify-center gap-2 border border-white/5 hover:border-white/10 hover:bg-white/[0.03] transition-all cursor-pointer group shadow-xl">
-                            <div class="w-11 h-11 rounded-xl bg-[#2a1c35] text-[#b266ff] flex items-center justify-center text-lg shadow-inner group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-pen-clip"></i>
-                            </div>
-                            <span class="font-bold text-xs tracking-wide text-slate-300 group-hover:text-white transition-colors">New Note</span>
-                        </a>
-
-                        <a href="notes.html" class="bg-cardbg rounded-2xl p-4 flex flex-col items-center justify-center gap-2 border border-white/5 hover:border-white/10 hover:bg-white/[0.03] transition-all cursor-pointer group shadow-xl">
-                            <div class="w-11 h-11 rounded-xl bg-[#222a20] text-[#5eead4] flex items-center justify-center text-lg shadow-inner group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-play"></i>
-                            </div>
-                            <span class="font-bold text-xs tracking-wide text-slate-300 group-hover:text-white transition-colors">Start Study</span>
-                        </a>
-
-                        <a href="notes.html" class="bg-cardbg rounded-2xl p-4 flex flex-col items-center justify-center gap-2 border border-white/5 hover:border-white/10 hover:bg-white/[0.03] transition-all cursor-pointer group shadow-xl">
-                            <div class="w-11 h-11 rounded-xl bg-[#2b1c1c] text-[#f59e0b] flex items-center justify-center text-lg shadow-inner group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-book-open-reader"></i>
-                            </div>
-                            <span class="font-bold text-xs tracking-wide text-slate-300 group-hover:text-white transition-colors">Read & Test</span>
-                        </a>
-                    </div>
-
-                    <!-- Main Layout Grid -->
-                    <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 flex-grow min-h-0">
-                        
-                        <!-- Daily Progress Card -->
-                        <div class="bg-cardbg rounded-2xl p-6 border border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6 shadow-xl relative overflow-hidden min-h-[347px]">
-                            
-                            <!-- Text Block -->
-                            <div class="flex-1 flex flex-col justify-between z-10 w-full mb-6 sm:mb-0 sm:pr-4 h-full">
-                                <div>
-                                    <span class="inline-block px-2.5 py-0.5 bg-slate-800 text-[#08e3d6] text-[9px] font-black uppercase tracking-widest rounded-full w-max mb-3 border border-slate-700">Daily Insight</span>
-                                    <h2 class="text-2xl font-extrabold text-white mb-1">Daily Progress</h2>
-                                    <p class="text-slate-400 font-medium text-xs max-w-sm leading-relaxed mb-4">
-                                        You've reached <strong class="text-[#08e3d6]" id="progress-percent-text">0%</strong> of your cognitive goal today.
-                                    </p>
-                                </div>
-
-                                <div class="flex gap-3">
-                                    <div class="bg-panelbg border border-white/5 p-3 rounded-xl flex-1">
-                                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 leading-tight">Session<br/>Target</p>
-                                        <p class="text-white font-extrabold text-base mt-2">45m <span class="text-[10px] font-semibold text-slate-500">left</span></p>
-                                    </div>
-                                    <div class="bg-panelbg border border-white/5 p-3 rounded-xl flex-1">
-                                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 leading-tight">Current<br/>Streak</p>
-                                        <p class="text-white font-extrabold text-base mt-2">12 <span class="text-[10px] font-semibold text-slate-500">Days</span></p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Glowing SVG Ring -->
-                            <div class="relative w-[180px] h-[180px] flex items-center justify-center shrink-0 z-10 mx-auto sm:mr-2">
-                                <svg class="w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 160 160">
-                                    <circle class="ring-bg" cx="80" cy="80" r="70"></circle>
-                                    <circle class="ring-progress" id="progress-ring" cx="80" cy="80" r="70"></circle>
-                                </svg>
-                                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                    <span class="text-3xl font-extrabold text-white tracking-tight" id="main-stat-time">0.0h</span>
-                                    <span class="text-[9px] font-black tracking-widest text-slate-400 uppercase mt-0.5">Focus Time</span>
-                                </div>
-                            </div>
-
-                            <!-- Absolute Background Glows -->
-                            <div class="absolute top-0 right-0 w-[300px] h-[300px] bg-[#08e3d6]/5 rounded-full blur-[80px] pointer-events-none"></div>
-                        </div>
-
-                        <!-- Right Stacked Column -->
-                        <div class="flex flex-col gap-4">
-                            
-                            <div class="bg-cardbg rounded-2xl p-4 border border-white/5 shadow-xl relative overflow-hidden group flex-1 min-h-[105px] flex flex-col justify-between">
-                                <div class="flex justify-between items-start mb-1">
-                                    <div class="w-9 h-9 rounded-xl bg-[#192b34] text-[#08e3d6] flex items-center justify-center shadow-inner shrink-0">
-                                        <i class="fa-solid fa-folder-open text-xs"></i>
-                                    </div>
-                                    <i class="fa-solid fa-arrow-right text-slate-600 text-xs group-hover:text-primary transition-colors cursor-pointer shrink-0"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-2xl font-extrabold text-white tracking-tight leading-none" id="side-stat-files">0</h3>
-                                    <p class="text-[9px] uppercase tracking-widest font-black text-slate-500 mt-1 truncate">Files in library</p>
-                                </div>
-                            </div>
-
-                            <div class="bg-cardbg rounded-2xl p-4 border border-white/5 shadow-xl relative overflow-hidden group flex-1 min-h-[105px] flex flex-col justify-between">
-                                <div class="flex justify-between items-start mb-1">
-                                    <div class="w-9 h-9 rounded-xl bg-[#281b35] text-[#b266ff] flex items-center justify-center shadow-inner shrink-0">
-                                        <i class="fa-solid fa-bullseye text-xs"></i>
-                                    </div>
-                                    <i class="fa-solid fa-arrow-right text-slate-600 text-xs group-hover:text-[#b266ff] transition-colors cursor-pointer shrink-0"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-2xl font-extrabold text-white tracking-tight leading-none" id="side-stat-focus">0%</h3>
-                                    <p class="text-[9px] uppercase tracking-widest font-black text-slate-500 mt-1 truncate">Avg Focus Score</p>
-                                </div>
-                            </div>
-
-                            <div class="bg-cardbg rounded-2xl p-4 border border-white/5 shadow-xl relative overflow-hidden group flex-1 min-h-[105px] flex flex-col justify-between">
-                                <div class="flex justify-between items-start mb-1">
-                                    <div class="w-9 h-9 rounded-xl bg-[#1b2b2a] text-[#5eead4] flex items-center justify-center shadow-inner shrink-0">
-                                        <i class="fa-solid fa-chart-line text-xs"></i>
-                                    </div>
-                                    <i class="fa-solid fa-arrow-right text-slate-600 text-xs group-hover:text-[#5eead4] transition-colors cursor-pointer shrink-0"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-2xl font-extrabold text-white tracking-tight leading-none" id="side-stat-wktime">0.0h</h3>
-                                    <p class="text-[9px] uppercase tracking-widest font-black text-slate-500 mt-1 truncate">Study Hours (WK)</p>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                </div>
-            </main>
+            <span class="font-bold text-base text-slate-900">PrepDeck</span>
         </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openProfileModal()" id="mobile-top-avatar" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
+                ?
+            </button>
+            <button onclick="api.logout()" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 transition-colors" title="Logout">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-[1500px] w-full mx-auto flex-1 flex flex-col lg:flex-row p-4 sm:p-6 lg:p-8 gap-6">
+        
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between shrink-0 shadow-sm hidden lg:flex h-[calc(100vh-4rem)] sticky top-8">
+            <div class="space-y-6">
+                <!-- Brand -->
+                <a href="dashboard.html" class="flex items-center gap-3 px-2 py-1 text-decoration-none">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-100">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-lg text-slate-900 tracking-tight block leading-none">PrepDeck</span>
+                        <span class="text-[10px] font-semibold text-slate-500 tracking-wider uppercase mt-1 block">Study Workspace</span>
+                    </div>
+                </a>
+
+                <!-- Navigation Links -->
+                <nav class="space-y-1.5 pt-2">
+                    <a href="dashboard.html" class="nav-link active">
+                        <i class="fa-solid fa-shapes text-sm w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="interview.html" class="nav-link">
+                        <i class="fa-solid fa-video text-sm w-5 text-center"></i>
+                        <span>Live Viva Interview</span>
+                    </a>
+                    <a href="notes.html" class="nav-link">
+                        <i class="fa-solid fa-book-open text-sm w-5 text-center"></i>
+                        <span>Study Library</span>
+                    </a>
+                    <a href="pyqs.html" class="nav-link">
+                        <i class="fa-regular fa-file-lines text-sm w-5 text-center"></i>
+                        <span>Past Papers</span>
+                    </a>
+                    <a href="upload.html" class="nav-link">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm w-5 text-center"></i>
+                        <span>Upload Documents</span>
+                    </a>
+                    <a href="reports.html" class="nav-link">
+                        <i class="fa-solid fa-chart-line text-sm w-5 text-center"></i>
+                        <span>Analytics & Reports</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Bottom User & Logout -->
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+                <div onclick="openProfileModal()" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-200">
+                    <div id="sidebar-avatar" class="w-9 h-9 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0">
+                        ?
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-xs font-bold text-slate-900 truncate" id="sidebar-name">Scholar</p>
+                        <p class="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Pro Tier Active</p>
+                    </div>
+                    <i class="fa-solid fa-gear text-slate-400 text-xs"></i>
+                </div>
+
+                <button onclick="api.logout()" id="logout-btn-desktop" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Workspace -->
+        <main class="flex-1 flex flex-col gap-6 overflow-hidden min-w-0">
+            
+            <!-- Greeting & Quick Actions Header -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold mb-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Active Semester 2026
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight" id="welcome-title">
+                        Welcome back, Scholar.
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                        Track your academic focus, launch AI viva sessions, and study course documents.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <a href="upload.html" class="btn-primary w-full sm:w-auto text-xs py-2.5">
+                        <i class="fa-solid fa-plus text-xs"></i> Upload Document
+                    </a>
+                    <a href="study.html" class="btn-secondary w-full sm:w-auto text-xs py-2.5">
+                        <i class="fa-solid fa-play text-indigo-600 text-xs"></i> Study Mode
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats Overview Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                
+                <!-- Stat 1: Total Documents -->
+                <div class="saas-card p-5 saas-card-hover flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Resources</span>
+                        <div class="text-2xl font-extrabold text-slate-900" id="stat-total-docs">0</div>
+                        <span class="text-[11px] font-medium text-slate-500 mt-1 block">Notes & Past Papers</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                </div>
+
+                <!-- Stat 2: Focus Score Percentage -->
+                <div class="saas-card p-5 saas-card-hover flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Focus Score</span>
+                        <div class="text-2xl font-extrabold text-slate-900" id="stat-focus-score">100%</div>
+                        <span class="text-[11px] font-semibold text-emerald-600 mt-1 block" id="stat-focus-label">Optimal Attention</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                </div>
+
+                <!-- Stat 3: Focused Time -->
+                <div class="saas-card p-5 saas-card-hover flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Focused Duration</span>
+                        <div class="text-2xl font-extrabold text-slate-900" id="stat-focused-time">0m</div>
+                        <span class="text-[11px] font-medium text-slate-500 mt-1 block">Active Webcam Focus</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                </div>
+
+                <!-- Stat 4: Study Sessions -->
+                <div class="saas-card p-5 saas-card-hover flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Recorded Sessions</span>
+                        <div class="text-2xl font-extrabold text-slate-900" id="stat-study-streak">0</div>
+                        <span class="text-[11px] font-medium text-slate-500 mt-1 block">Completed Study Logs</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workspace Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Card 1: Study Library -->
+                <div class="saas-card p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-base mb-4">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900 mb-1">Course Notes Library</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed mb-4">Browse, search, and study all your uploaded syllabus lecture notes by semester.</p>
+                    </div>
+                    <a href="notes.html" class="btn-secondary text-xs py-2 w-full justify-between">
+                        <span>Open Library</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+
+                <!-- Card 2: AI Live Interview -->
+                <div class="saas-card p-6 flex flex-col justify-between bg-gradient-to-br from-white to-indigo-50/30">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center text-base mb-4">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900 mb-1">AI Viva & Oral Interview</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed mb-4">Simulate university viva exams. The AI speaks questions, evaluates your answers, and delivers reports.</p>
+                    </div>
+                    <a href="interview.html" class="btn-primary text-xs py-2 w-full justify-between">
+                        <span>Start AI Viva</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+
+                <!-- Card 3: Read & Test Quizzes -->
+                <div class="saas-card p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center text-base mb-4">
+                            <i class="fa-solid fa-book-open-reader"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900 mb-1">Read & Test Mode</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed mb-4">Read PDFs with high-clarity canvas zoom and generate instant AI revision quizzes.</p>
+                    </div>
+                    <a href="read_test.html" class="btn-secondary text-xs py-2 w-full justify-between">
+                        <span>Launch Reader</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Documents Section -->
+            <div class="saas-card p-6">
+                <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Your Study Documents</h2>
+                        <p class="text-xs text-slate-500">Recently uploaded course notes and previous year papers</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="notes.html" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">View All Notes →</a>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="docs-loading" class="text-center py-10 text-slate-500 text-xs font-medium">
+                    <i class="fa-solid fa-spinner fa-spin text-indigo-600 text-base mb-2 block"></i>
+                    Loading your study library...
+                </div>
+
+                <!-- Empty State -->
+                <div id="docs-empty" class="hidden text-center py-12 px-4">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl mx-auto mb-3">
+                        <i class="fa-regular fa-folder-open"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900 mb-1">No documents uploaded yet</h3>
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto mb-4">Add your syllabus notes or past question papers to start AI focus study sessions.</p>
+                    <a href="upload.html" class="btn-primary text-xs py-2">
+                        <i class="fa-solid fa-plus text-xs"></i> Upload Your First PDF
+                    </a>
+                </div>
+
+                <!-- Documents List Table -->
+                <div id="docs-table-container" class="hidden overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
+                                <th class="pb-3 pl-2">Document</th>
+                                <th class="pb-3">Type</th>
+                                <th class="pb-3">Semester</th>
+                                <th class="pb-3">Upload Date</th>
+                                <th class="pb-3 text-right pr-2">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="docs-tbody" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
 
+    <!-- Mobile Navigation Bottom Bar -->
+    <nav class="lg:hidden bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center sticky bottom-0 z-40 text-[10px] font-bold text-slate-500">
+        <a href="dashboard.html" class="flex flex-col items-center gap-1 text-indigo-600">
+            <i class="fa-solid fa-shapes text-sm"></i>
+            <span>Dash</span>
+        </a>
+        <a href="notes.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-book-open text-sm"></i>
+            <span>Notes</span>
+        </a>
+        <a href="pyqs.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-regular fa-file-lines text-sm"></i>
+            <span>PYQs</span>
+        </a>
+        <a href="upload.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+            <span>Upload</span>
+        </a>
+        <a href="reports.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-chart-line text-sm"></i>
+            <span>Reports</span>
+        </a>
+    </nav>
 
-    <script src="js/api.js"></script>
     <script>
-        if(!api.token) window.location.href = 'auth.html';
-        
+        api.requireAuth();
+
+        // Render Scholar name & avatar
         try {
             const userStr = localStorage.getItem('prepdeck_user');
-            if(userStr) {
+            if (userStr) {
                 const user = JSON.parse(userStr);
-                document.getElementById('sidebar-name').innerText = user?.name?.split(' ')[0] || 'Scholar';
-                document.getElementById('top-avatar').innerHTML = user?.name ? user.name.charAt(0).toUpperCase() : '?'; 
+                const firstName = user?.name ? user.name.split(' ')[0] : 'Scholar';
+                document.getElementById('sidebar-name').innerText = user?.name || 'Scholar';
+                document.getElementById('welcome-title').innerText = `Welcome back, ${firstName}.`;
+                
+                const initials = user?.name ? user.name.charAt(0).toUpperCase() : '?';
+                document.getElementById('sidebar-avatar').innerText = initials;
+                const mobileAvatar = document.getElementById('mobile-top-avatar');
+                if (mobileAvatar) mobileAvatar.innerText = initials;
             }
         } catch(e) {
-            console.error("Local user load error:", e);
+            console.warn("User load warning:", e);
         }
 
-        async function loadDashboard() {
+        async function loadDashboardData() {
             try {
-                const [stats, pyqs, notes] = await Promise.all([
-                    api.getDashboardStats().catch(()=>({})),
-                    api.getDocuments('PYQ').catch(()=>([])),
-                    api.getDocuments('Note').catch(()=>([]))
+                const [stats, pyqs, notes, sessions] = await Promise.all([
+                    api.getDashboardStats().catch(() => ({})),
+                    api.getDocuments('PYQ').catch(() => []),
+                    api.getDocuments('Note').catch(() => []),
+                    api.getStudySessions().catch(() => [])
                 ]);
 
+                // 1. Total Documents
                 const totalDocs = (pyqs.length || 0) + (notes.length || 0);
-                document.getElementById('side-stat-files').innerText = totalDocs;
-                
-                const focusScore = Math.round(stats.focusPercentage || 0);
-                document.getElementById('side-stat-focus').innerText = `${focusScore}%`;
-                
-                const totalStudyMinutes = Math.floor((stats.totalStudyTime || 0) / 60000);
-                let displayStudyTime = '';
-                if (totalStudyMinutes < 60) {
-                    displayStudyTime = `${totalStudyMinutes}m`;
+                document.getElementById('stat-total-docs').innerText = totalDocs;
+
+                // 2. Focus Score
+                const focusScore = Math.round(stats.focusPercentage || 100);
+                document.getElementById('stat-focus-score').innerText = `${focusScore}%`;
+                const focusLabel = document.getElementById('stat-focus-label');
+                if (focusScore >= 80) {
+                    focusLabel.innerText = 'Optimal Attention';
+                    focusLabel.className = 'text-[11px] font-semibold text-emerald-600 mt-1 block';
+                } else if (focusScore >= 50) {
+                    focusLabel.innerText = 'Steady Pace';
+                    focusLabel.className = 'text-[11px] font-semibold text-amber-600 mt-1 block';
                 } else {
-                    displayStudyTime = `${(totalStudyMinutes / 60).toFixed(1)}h`;
+                    focusLabel.innerText = 'Needs Attention';
+                    focusLabel.className = 'text-[11px] font-semibold text-rose-600 mt-1 block';
                 }
-                
-                const totalFocusedMinutes = Math.floor((stats.totalFocusedTime || 0) / 60000);
-                let displayFocusedTime = '';
-                if (totalFocusedMinutes < 60) {
-                    displayFocusedTime = `${totalFocusedMinutes}m`;
-                } else {
-                    displayFocusedTime = `${(totalFocusedMinutes / 60).toFixed(1)}h`;
+
+                // 3. Focused Time
+                const focusedMinutes = Math.floor((stats.totalFocusedTime || 0) / 60000);
+                document.getElementById('stat-focused-time').innerText = focusedMinutes < 60 
+                    ? `${focusedMinutes}m` 
+                    : `${(focusedMinutes / 60).toFixed(1)}h`;
+
+                // 4. Study Sessions Count
+                document.getElementById('stat-study-streak').innerText = sessions.length || 0;
+
+                // 5. Recent Documents Table
+                const allDocs = [...notes, ...pyqs].sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+                const loadingEl = document.getElementById('docs-loading');
+                const emptyEl = document.getElementById('docs-empty');
+                const tableContainer = document.getElementById('docs-table-container');
+                const tbody = document.getElementById('docs-tbody');
+
+                loadingEl.classList.add('hidden');
+
+                if (allDocs.length === 0) {
+                    emptyEl.classList.remove('hidden');
+                    tableContainer.classList.add('hidden');
+                    return;
                 }
-                
-                document.getElementById('main-stat-time').innerText = displayFocusedTime;
-                document.getElementById('side-stat-wktime').innerText = displayStudyTime; 
 
-                let visualProgress = focusScore; 
-                if (visualProgress === 0) visualProgress = 15; 
-                if (visualProgress > 100) visualProgress = 100;
+                emptyEl.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                tbody.innerHTML = '';
 
-                const ring = document.getElementById('progress-ring');
-                const offset = 440 - (440 * (visualProgress / 100));
-                
-                setTimeout(() => {
-                    if(ring) ring.style.strokeDashoffset = offset;
-                    const pctTxt = document.getElementById('progress-percent-text');
-                    if(pctTxt) pctTxt.innerText = `${visualProgress}%`;
-                }, 150);
+                // Show top 6 most recent documents
+                allDocs.slice(0, 6).forEach(doc => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50 transition-colors';
+                    const isPyq = doc.type === 'PYQ';
+                    const badgeClass = isPyq ? 'badge-amber' : 'badge-indigo';
+                    const docTypeLabel = isPyq ? 'Past Paper' : 'Lecture Note';
 
-            } catch(err) {
-                console.error("Dashboard Load Error:", err);
+                    row.innerHTML = `
+                        <td class="py-3.5 pl-2 font-medium">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg ${isPyq ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'} flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-file-pdf text-sm"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <span class="font-bold text-slate-900 block truncate max-w-[220px] sm:max-w-xs" title="${doc.subject}">${doc.subject}</span>
+                                    <span class="text-[11px] text-slate-400 block truncate max-w-[220px] sm:max-w-xs" title="${doc.originalName}">${doc.originalName}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3.5">
+                            <span class="badge ${badgeClass}">${docTypeLabel}</span>
+                        </td>
+                        <td class="py-3.5 font-semibold text-slate-700">
+                            Sem ${doc.semester || '1'}
+                        </td>
+                        <td class="py-3.5 text-slate-500 font-medium">
+                            ${new Date(doc.uploadDate).toLocaleDateString()}
+                        </td>
+                        <td class="py-3.5 text-right pr-2">
+                            <div class="inline-flex items-center gap-1.5">
+                                <a href="study.html?docId=${doc._id}" class="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 flex items-center justify-center transition-colors" title="Study Mode">
+                                    <i class="fa-solid fa-play text-xs"></i>
+                                </a>
+                                <a href="read_test.html?docId=${doc._id}" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors" title="Read & Test Quiz">
+                                    <i class="fa-solid fa-book-open-reader text-xs"></i>
+                                </a>
+                                <button onclick="handleDownloadDoc('${doc._id}', '${doc.originalName.replace(/'/g, "\\'")}', this)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer" title="Download">
+                                    <i class="fa-solid fa-download text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch(e) {
+                console.error("Dashboard loading error:", e);
+                const loadingEl = document.getElementById('docs-loading');
+                if (loadingEl) loadingEl.innerText = "Failed to load dashboard data. Please try refreshing.";
             }
         }
 
-        loadDashboard();
+        async function handleDownloadDoc(id, filename, btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+            btn.disabled = true;
+            try {
+                await api.downloadDocument(id, filename);
+                window.showToast('Download started', 'success');
+            } catch(e) {
+                window.showToast(e.message || 'Download failed', 'error');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        loadDashboardData();
     </script>
 </body>
 </html>

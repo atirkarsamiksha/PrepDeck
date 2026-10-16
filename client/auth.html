@@ -1,293 +1,274 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PrepDeck - Auth</title>
+    <title>Sign In / Register — PrepDeck</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
-        darkMode: 'class',
-        theme: { 
-            extend: { 
-                colors: { 
-                    cyanBg: '#21e6ff',
-                    darkbg: '#0f1115',
-                    cardbg: '#181a1f',
-                    inputbg: '#050505'
-                },
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif'],
-                }
-            } 
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+              }
+            },
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            }
+          }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        
-        .glow-btn {
-            background-color: #21e6ff;
-            color: #000;
-            box-shadow: 0px 0px 20px rgba(33, 230, 255, 0.4);
-            position: relative;
-        }
-        
-        .glow-btn::after {
-            content: '';
-            position: absolute;
-            top: -2px; left: -2px; right: -2px; bottom: -2px;
-            border-radius: 0.75rem;
-            border: 1px dashed rgba(33, 230, 255, 0.6);
-            pointer-events: none;
-        }
-
-        .dark-input {
-            background-color: #050505 !important;
-        }
-
-        .toggle-pill {
-            background: #151518;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .toggle-btn.active {
-            background-color: #21e6ff;
-            color: black;
-            border-radius: 999px;
-            font-weight: 600;
-        }
-
-        /* Responsive hiding of left panel */
-        .transition-layout { transition: all 0.5s ease-in-out; }
-    </style>
 </head>
-<body class="bg-[#1f2023] min-h-screen p-2 md:p-4 flex items-center justify-center font-sans overflow-hidden">
-    
-    <!-- Outer tablet wrapper -->
-    <main class="w-full h-full min-h-[95vh] bg-[#0f1115] rounded-[2rem] border-[6px] border-[#313338] relative flex overflow-hidden shadow-2xl">
-        
-        <!-- Header Logo -->
-        <div class="absolute top-6 left-8 z-50 flex items-center gap-2">
-            <i class="fa-solid fa-wand-magic-sparkles text-[#21e6ff] text-xl"></i>
-            <span class="text-xl font-bold tracking-tight text-white">PrepDeck</span>
-        </div>
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col justify-between antialiased selection:bg-indigo-100 selection:text-indigo-900">
 
-        <div class="absolute top-6 right-8 z-50 text-slate-400 text-sm font-medium hover:text-white cursor-pointer hidden md:block">
-            Help
-        </div>
-
-        <!-- Left Marketing Column (Signup only visibly split) -->
-        <div id="left-panel" class="hidden md:flex flex-col justify-center w-1/2 p-16 transition-layout">
-            <div id="marketing-content" class="max-w-md">
-                <span class="text-indigo-400 text-xs font-bold tracking-[0.2em] uppercase">The Digital Sanctuary</span>
-                <h1 class="text-5xl font-extrabold text-white leading-tight mt-4 mb-2">
-                    Illuminate Your <br/> <span class="text-[#21e6ff]">Intelligence</span>
-                </h1>
-                <p class="text-slate-400 text-sm leading-relaxed mb-12">
-                    Step into an elite, high-tech library designed for focus. PrepDeck uses AI-driven synthesis to transform your study sessions into a premium cognitive environment.
-                </p>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-[#15171c] border border-white/5 p-5 rounded-2xl">
-                        <i class="fa-solid fa-brain text-[#21e6ff] mb-4 text-xl"></i>
-                        <h3 class="text-white font-bold text-sm mb-1">Smart Synthesis</h3>
-                        <p class="text-xs text-slate-400 leading-snug">AI-powered summary decks generated in seconds.</p>
-                    </div>
-                    <div class="bg-[#15171c] border border-white/5 p-5 rounded-2xl">
-                        <i class="fa-solid fa-book-open-reader text-indigo-400 mb-4 text-xl"></i>
-                        <h3 class="text-white font-bold text-sm mb-1">Deep Focus</h3>
-                        <p class="text-xs text-slate-400 leading-snug">A digital sanctuary built for late-night scholars.</p>
-                    </div>
-                </div>
+    <!-- Header bar -->
+    <header class="w-full max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <a href="index.html" class="flex items-center gap-2.5 text-decoration-none">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-100">
+                <i class="fa-solid fa-graduation-cap text-sm"></i>
             </div>
+            <span class="font-bold text-lg text-slate-900 tracking-tight">PrepDeck</span>
+        </a>
+        <a href="index.html" class="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left text-[10px]"></i> Back to Home
+        </a>
+    </header>
 
-            <!-- Login variant content -->
-            <div id="login-marketing-content" class="max-w-md text-center mx-auto hidden">
-                <div class="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/10">
-                    <i class="fa-solid fa-wand-magic-sparkles text-[#21e6ff] text-2xl"></i>
-                </div>
-                <h1 class="text-4xl font-extrabold text-white mb-4">Welcome Back</h1>
-                <p class="text-slate-400 text-sm leading-relaxed mx-auto max-w-sm">
-                    Return to your digital sanctuary of high-level focus and academic mastery.
-                </p>
-            </div>
-        </div>
-
-        <!-- Vertical Divider -->
-        <div id="vertical-divider" class="hidden md:block w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
-
-        <!-- Right Auth Column -->
-        <div id="right-panel" class="w-full md:w-1/2 flex items-center justify-center p-8 transition-layout relative z-10">
-            <div class="bg-[#181a1f] rounded-[2rem] p-8 w-full max-w-md shadow-2xl relative border border-white/5">
+    <!-- Main Container -->
+    <main class="flex-grow flex items-center justify-center px-4 py-8 sm:py-12">
+        <div class="w-full max-w-md">
+            
+            <!-- Auth Card -->
+            <div class="saas-card bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-xl shadow-slate-200/50">
                 
-                <div id="form-header" class="mb-8">
-                    <h2 class="text-2xl font-bold text-white tracking-tight" id="auth-title">Create Account</h2>
-                    <p class="text-slate-400 text-xs mt-1" id="auth-subtitle">Join the next generation of scholars.</p>
+                <!-- Tab Switcher -->
+                <div class="flex bg-slate-100/90 p-1 rounded-xl mb-6 border border-slate-200/60">
+                    <button type="button" id="tab-login" onclick="switchMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-900 bg-white shadow-sm">
+                        Sign In
+                    </button>
+                    <button type="button" id="tab-signup" onclick="switchMode('signup')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-500 hover:text-slate-900">
+                        Create Account
+                    </button>
                 </div>
 
-                <form id="auth-form" class="space-y-5">
-                    <div id="name-field">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Full Name</label>
-                        <input type="text" id="name" class="w-full dark-input text-white text-sm rounded-lg py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[#21e6ff] transition-all" placeholder="Enter your name">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Email Address</label>
-                        <input type="email" id="email" required class="w-full dark-input text-white text-sm rounded-lg py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[#21e6ff] transition-all" placeholder="scholar@prepdeck.ai">
-                    </div>
+                <!-- Header Title -->
+                <div class="mb-6 text-center">
+                    <h1 id="auth-title" class="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome back</h1>
+                    <p id="auth-subtitle" class="text-xs text-slate-500 mt-1">Sign in with your university credentials</p>
+                </div>
 
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
-                            <a href="#" id="forgot-pw" class="text-[10px] font-bold text-[#21e6ff] hidden">Forgot Password?</a>
+                <!-- Alert Message -->
+                <div id="auth-alert" class="hidden mb-5 p-3 rounded-xl text-xs font-semibold border flex items-center gap-2.5">
+                    <i id="auth-alert-icon" class="fa-solid fa-circle-exclamation shrink-0"></i>
+                    <span id="auth-alert-text" class="flex-1"></span>
+                </div>
+
+                <!-- Form -->
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                    
+                    <!-- Full Name (Signup only) -->
+                    <div id="name-field-group" class="hidden">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Full Name</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-user absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="name-input" placeholder="e.g. Samiksha Atirkar" class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
                         </div>
-                        <input type="password" id="password" required class="w-full dark-input text-white text-sm rounded-lg py-3 px-4 focus:outline-none focus:ring-1 focus:ring-[#21e6ff] transition-all" placeholder="••••••••">
                     </div>
-                    
-                    <div id="error-msg" class="text-red-400 text-xs hidden text-center bg-red-400/10 py-2 rounded"></div>
 
-                    <button type="submit" id="submit-btn" class="w-full py-4 mt-2 rounded-xl glow-btn font-bold text-sm transition-transform active:scale-95 flex justify-center items-center gap-2">
-                        <span>Sign Up</span> <i class="fa-solid fa-arrow-right"></i>
-                    </button>
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Email Address</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="email" id="email-input" required placeholder="scholar@university.ac.in" class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-xs font-semibold text-slate-700">Password</label>
+                            <span id="forgot-link" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer" onclick="handleForgotHint()">Forgot?</span>
+                        </div>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="password" id="password-input" required placeholder="••••••••" class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-10 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5">
+                                <i id="eye-icon" class="fa-regular fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                        <p id="password-hint" class="hidden text-[11px] text-slate-400 mt-1">Must be at least 6 characters.</p>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-2">
+                        <button type="submit" id="submit-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm shadow-indigo-200 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                            <span id="submit-btn-text">Sign In</span>
+                        </button>
+                    </div>
                 </form>
 
-                <div class="mt-8 flex items-center justify-center gap-4">
-                    <div class="h-px bg-white/5 flex-1"></div>
-                    <span class="text-[10px] uppercase tracking-widest font-bold text-slate-600">Or continue with</span>
-                    <div class="h-px bg-white/5 flex-1"></div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 mt-6">
-                    <button class="bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl py-3 flex items-center justify-center gap-2 text-xs font-bold text-white transition-colors">
-                        <i class="fa-brands fa-google text-sm"></i> Google
-                    </button>
-                    <button class="bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl py-3 flex items-center justify-center gap-2 text-xs font-bold text-white transition-colors">
-                        <i class="fa-brands fa-github text-sm"></i> GitHub
-                    </button>
-                </div>
-
-                <div class="mt-8 text-center text-xs text-slate-400" id="bottom-helper">
-                    Already have an account? <span class="text-[#21e6ff] font-bold cursor-pointer hover:underline border border-dashed border-[#21e6ff] px-1 py-0.5 rounded" onclick="switchMode('login')">Login</span>
+                <div class="mt-6 pt-5 border-t border-slate-100 text-center">
+                    <p class="text-xs text-slate-500" id="auth-switch-prompt">
+                        Don't have an account? 
+                        <button type="button" onclick="switchMode('signup')" class="font-bold text-indigo-600 hover:underline ml-1">Create one</button>
+                    </p>
                 </div>
             </div>
-        </div>
 
-        <!-- Bottom Toggle Pill -->
-        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 toggle-pill rounded-full p-1 flex items-center gap-1 shadow-2xl">
-            <button id="pill-login" class="toggle-btn px-6 py-2 rounded-full text-xs text-slate-400 flex items-center gap-2 transition-all" onclick="switchMode('login')">
-                <i class="fa-solid fa-arrow-right-to-bracket"></i> SIGN IN
-            </button>
-            <button id="pill-signup" class="toggle-btn active px-6 py-2 rounded-full text-xs text-slate-400 flex items-center gap-2 transition-all" onclick="switchMode('signup')">
-                <i class="fa-solid fa-user-plus"></i> JOIN NOW
-            </button>
+            <!-- Security Badge -->
+            <div class="mt-6 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-shield-check text-emerald-500"></i>
+                <span>Private user data isolation • JWT 256-bit encryption</span>
+            </div>
         </div>
-
     </main>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-xs text-slate-400 border-t border-slate-200/60 bg-white/50">
+        © 2026 PrepDeck. All scholar data is private and securely encrypted.
+    </footer>
 
     <script src="js/api.js"></script>
     <script>
-        if(localStorage.getItem('prepdeck_token')) {
-            window.location.href = 'dashboard.html';
+        // If already logged in, redirect straight to dashboard
+        if (api.isAuthenticated()) {
+            window.location.replace('dashboard.html');
         }
 
-        let isLogin = false;
-        
-        const form = document.getElementById('auth-form');
-        const submitBtn = document.querySelector('#submit-btn span');
-        const nameField = document.getElementById('name-field');
-        const authTitle = document.getElementById('auth-title');
-        const authSubtitle = document.getElementById('auth-subtitle');
-        const formHeader = document.getElementById('form-header');
-        const errorMsg = document.getElementById('error-msg');
-        
-        const pillLogin = document.getElementById('pill-login');
-        const pillSignup = document.getElementById('pill-signup');
-        const bottomHelper = document.getElementById('bottom-helper');
-        
-        const leftPanel = document.getElementById('left-panel');
-        const marketingContent = document.getElementById('marketing-content');
-        const loginMarketingContent = document.getElementById('login-marketing-content');
-        const forgotPw = document.getElementById('forgot-pw');
+        let currentMode = 'login';
 
         function switchMode(mode) {
-            isLogin = mode === 'login';
-            errorMsg.classList.add('hidden');
+            currentMode = mode;
+            const tabLogin = document.getElementById('tab-login');
+            const tabSignup = document.getElementById('tab-signup');
+            const nameGroup = document.getElementById('name-field-group');
+            const nameInput = document.getElementById('name-input');
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+            const submitBtnText = document.getElementById('submit-btn-text');
+            const switchPrompt = document.getElementById('auth-switch-prompt');
+            const forgotLink = document.getElementById('forgot-link');
+            const passwordHint = document.getElementById('password-hint');
+            const alertBox = document.getElementById('auth-alert');
 
-            if (isLogin) {
-                // UI for Login
-                pillSignup.classList.remove('active');
-                pillLogin.classList.add('active');
-                
-                nameField.classList.add('hidden');
-                document.getElementById('name').required = false;
+            alertBox.classList.add('hidden');
 
-                formHeader.classList.add('hidden'); // Hide "Create Account" header in card
-                forgotPw.classList.remove('hidden');
-
-                submitBtn.innerText = "Login ";
-
-                bottomHelper.innerHTML = `New to PrepDeck? <span class="text-[#21e6ff] font-bold cursor-pointer hover:underline border border-dashed border-[#21e6ff] px-1 rounded inline-block" onclick="switchMode('signup')">Join Now</span>`;
-
-                // Switch left panel content
-                marketingContent.classList.add('hidden');
-                loginMarketingContent.classList.remove('hidden');
-
+            if (mode === 'signup') {
+                tabSignup.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-900 bg-white shadow-sm';
+                tabLogin.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-500 hover:text-slate-900';
+                nameGroup.classList.remove('hidden');
+                nameInput.required = true;
+                title.innerText = 'Create your account';
+                subtitle.innerText = 'Start tracking focus and studying smarter';
+                submitBtnText.innerText = 'Create Scholar Account';
+                switchPrompt.innerHTML = 'Already have an account? <button type="button" onclick="switchMode(\'login\')" class="font-bold text-indigo-600 hover:underline ml-1">Sign In</button>';
+                forgotLink.classList.add('hidden');
+                passwordHint.classList.remove('hidden');
             } else {
-                // UI for Signup
-                pillLogin.classList.remove('active');
-                pillSignup.classList.add('active');
-                
-                nameField.classList.remove('hidden');
-                document.getElementById('name').required = true;
-
-                formHeader.classList.remove('hidden');
-                authTitle.innerText = "Create Account";
-                authSubtitle.innerText = "Join the next generation of scholars.";
-                forgotPw.classList.add('hidden');
-
-                submitBtn.innerText = "Sign Up ";
-
-                bottomHelper.innerHTML = `Already have an account? <span class="text-[#21e6ff] font-bold cursor-pointer hover:underline border border-dashed border-[#21e6ff] px-1 rounded inline-block" onclick="switchMode('login')">Login</span>`;
-
-                // Switch left panel content
-                loginMarketingContent.classList.add('hidden');
-                marketingContent.classList.remove('hidden');
+                tabLogin.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-900 bg-white shadow-sm';
+                tabSignup.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-500 hover:text-slate-900';
+                nameGroup.classList.add('hidden');
+                nameInput.required = false;
+                nameInput.value = '';
+                title.innerText = 'Welcome back';
+                subtitle.innerText = 'Sign in with your university credentials';
+                submitBtnText.innerText = 'Sign In';
+                switchPrompt.innerHTML = 'Don\'t have an account? <button type="button" onclick="switchMode(\'signup\')" class="font-bold text-indigo-600 hover:underline ml-1">Create one</button>';
+                forgotLink.classList.remove('hidden');
+                passwordHint.classList.add('hidden');
             }
         }
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            errorMsg.classList.add('hidden');
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const name = document.getElementById('name').value;
+        function togglePasswordVisibility() {
+            const pwdInput = document.getElementById('password-input');
+            const eyeIcon = document.getElementById('eye-icon');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                eyeIcon.className = 'fa-regular fa-eye-slash text-xs text-indigo-600';
+            } else {
+                pwdInput.type = 'password';
+                eyeIcon.className = 'fa-regular fa-eye text-xs text-slate-400';
+            }
+        }
 
-            const originalBtnText = submitBtn.innerText;
-            submitBtn.innerText = "Processing...";
-            submitBtn.parentElement.classList.add('opacity-80', 'pointer-events-none');
+        function handleForgotHint() {
+            showAlert('If you forgot your password, please contact your administrator or register a new scholar account.', 'info');
+        }
+
+        function showAlert(msg, type = 'error') {
+            const alertBox = document.getElementById('auth-alert');
+            const alertText = document.getElementById('auth-alert-text');
+            const alertIcon = document.getElementById('auth-alert-icon');
+            alertText.innerText = msg;
+            alertBox.classList.remove('hidden', 'bg-rose-50', 'border-rose-200', 'text-rose-900', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-900', 'bg-indigo-50', 'border-indigo-200', 'text-indigo-900');
+
+            if (type === 'error') {
+                alertBox.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-900');
+                alertIcon.className = 'fa-solid fa-circle-exclamation shrink-0 text-rose-500';
+            } else if (type === 'success') {
+                alertBox.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-900');
+                alertIcon.className = 'fa-solid fa-circle-check shrink-0 text-emerald-500';
+            } else {
+                alertBox.classList.add('bg-indigo-50', 'border-indigo-200', 'text-indigo-900');
+                alertIcon.className = 'fa-solid fa-circle-info shrink-0 text-indigo-500';
+            }
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('email-input').value.trim();
+            const password = document.getElementById('password-input').value;
+            const submitBtn = document.getElementById('submit-btn');
+            const submitBtnText = document.getElementById('submit-btn-text');
+
+            if (!email || !password) {
+                showAlert('Please provide both email and password.');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Authenticating...';
 
             try {
-                if (isLogin) {
-                    await api.login(email, password);
-                } else {
+                if (currentMode === 'signup') {
+                    const name = document.getElementById('name-input').value.trim();
+                    if (!name) {
+                        throw new Error('Please enter your full name.');
+                    }
                     await api.register(name, email, password);
+                    showAlert('Account created! Redirecting to dashboard...', 'success');
+                } else {
+                    await api.login(email, password);
+                    showAlert('Signed in successfully! Redirecting...', 'success');
                 }
-                window.location.href = 'dashboard.html';
-            } catch (err) {
-                errorMsg.innerText = err.message || "An error occurred";
-                errorMsg.classList.remove('hidden');
-                
-                submitBtn.innerText = originalBtnText;
-                submitBtn.parentElement.classList.remove('opacity-80', 'pointer-events-none');
-            }
-        });
 
-        // Initialize state
-        switchMode('signup');
+                setTimeout(() => {
+                    window.location.replace('dashboard.html');
+                }, 400);
+            } catch (err) {
+                showAlert(err.message || 'Authentication failed. Please verify credentials.');
+                submitBtn.disabled = false;
+                submitBtnText.innerText = currentMode === 'signup' ? 'Create Scholar Account' : 'Sign In';
+            }
+        }
+
+        // Initialize mode from URL params e.g. ?mode=signup
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'signup') {
+            switchMode('signup');
+        } else {
+            switchMode('login');
+        }
     </script>
 </body>
 </html>

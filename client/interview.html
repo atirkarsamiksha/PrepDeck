@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Live Viva Interview — PrepDeck</title>
+    <script>
+        if (!localStorage.getItem('prepdeck_token')) {
+            window.location.replace('auth.html?mode=login');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+              }
+            },
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Local Face-API JS engine -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/dist/face-api.js"></script>
+    <script src="js/api.js"></script>
+    <script defer src="js/focus-detector.js"></script>
+</head>
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Mobile Top Navigation Header -->
+    <header class="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-2.5">
+            <button onclick="handleExitInterview()" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 mr-1" title="Back">
+                <i class="fa-solid fa-arrow-left text-xs"></i>
+            </button>
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                <i class="fa-solid fa-graduation-cap text-xs"></i>
+            </div>
+            <span class="font-bold text-base text-slate-900">PrepDeck</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openProfileModal()" id="mobile-top-avatar" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
+                ?
+            </button>
+            <button onclick="api.logout()" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 transition-colors" title="Logout">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-[1560px] w-full mx-auto flex-1 flex flex-col lg:flex-row p-4 sm:p-6 lg:p-8 gap-6">
+        
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between shrink-0 shadow-sm hidden lg:flex h-[calc(100vh-4rem)] sticky top-8">
+            <div class="space-y-6">
+                <!-- Brand -->
+                <a href="dashboard.html" class="flex items-center gap-3 px-2 py-1 text-decoration-none">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-100">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-lg text-slate-900 tracking-tight block leading-none">PrepDeck</span>
+                        <span class="text-[10px] font-semibold text-slate-500 tracking-wider uppercase mt-1 block">Study Workspace</span>
+                    </div>
+                </a>
+
+                <!-- Navigation Links -->
+                <nav class="space-y-1.5 pt-2">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fa-solid fa-shapes text-sm w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="interview.html" class="nav-link active">
+                        <i class="fa-solid fa-video text-sm w-5 text-center"></i>
+                        <span>Live Viva Interview</span>
+                    </a>
+                    <a href="notes.html" class="nav-link">
+                        <i class="fa-solid fa-book-open text-sm w-5 text-center"></i>
+                        <span>Study Library</span>
+                    </a>
+                    <a href="pyqs.html" class="nav-link">
+                        <i class="fa-regular fa-file-lines text-sm w-5 text-center"></i>
+                        <span>Past Papers</span>
+                    </a>
+                    <a href="upload.html" class="nav-link">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm w-5 text-center"></i>
+                        <span>Upload Documents</span>
+                    </a>
+                    <a href="reports.html" class="nav-link">
+                        <i class="fa-solid fa-chart-line text-sm w-5 text-center"></i>
+                        <span>Analytics & Reports</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- User Profile & Sign Out Footer -->
+            <div class="pt-4 border-t border-slate-100">
+                <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                    <button onclick="openProfileModal()" class="flex items-center gap-3 text-left overflow-hidden flex-1 mr-2 cursor-pointer">
+                        <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200 shrink-0" id="sidebar-avatar">
+                            ?
+                        </div>
+                        <div class="truncate">
+                            <span class="text-xs font-bold text-slate-800 block truncate" id="sidebar-name">Scholar</span>
+                            <span class="text-[10px] text-slate-400 block truncate" id="sidebar-email">student@mit.edu</span>
+                        </div>
+                    </button>
+                    <button onclick="api.logout()" class="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors shrink-0" title="Sign Out">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <main class="flex-1 flex flex-col min-w-0">
+            
+            <!-- Top Control Bar -->
+            <header class="bg-white border border-slate-200/90 rounded-2xl px-5 py-3.5 mb-6 shadow-sm flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button onclick="handleExitInterview()" class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm shrink-0" title="Exit to Dashboard">
+                        <i class="fa-solid fa-arrow-left text-slate-600 text-sm"></i>
+                    </button>
+                    <div>
+                        <h1 class="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight" id="interview-header-title">AI Live Viva Interview</h1>
+                        <p class="text-xs text-slate-500 font-medium" id="interview-header-sub">Interactive oral viva examination with live focus monitoring</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Session Timer -->
+                    <div class="bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-200 flex items-center gap-3">
+                        <div class="text-left">
+                            <p class="text-[9px] text-slate-400 uppercase tracking-widest font-black">Timer</p>
+                            <p class="font-mono font-bold text-xs sm:text-sm text-slate-800" id="timer-display">00:00:00</p>
+                        </div>
+                        <div class="w-px h-6 bg-slate-200"></div>
+                        <div class="text-left">
+                            <p class="text-[9px] text-indigo-600 uppercase tracking-widest font-black">Focus</p>
+                            <p class="font-mono font-bold text-xs sm:text-sm text-indigo-600" id="header-focus-pct">100%</p>
+                        </div>
+                    </div>
+
+                    <!-- Audio Alert Toggle -->
+                    <button id="toggle-sound-btn" class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-600 hover:text-indigo-600 transition-colors text-xs" title="Toggle Audio Alert">
+                        <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- WARNING NOTIFICATION BANNER (Amber for caution, Red for danger) -->
+            <div id="cv-warning-banner" class="hidden mb-4 p-4 rounded-xl border transition-all duration-300 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div id="cv-warning-icon" class="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold" id="cv-warning-title">Focus Alert</h4>
+                        <p class="text-xs" id="cv-warning-desc">Please look towards the interview camera.</p>
+                    </div>
+                </div>
+                <button onclick="dismissWarning()" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white transition-colors border border-slate-200 shadow-2xs">
+                    I'm Awake / Dismiss
+                </button>
+            </div>
+
+            <!-- INTERVIEW WORKSPACE CONTAINER -->
+            <div class="flex-1 flex flex-col min-h-0">
+                
+                <!-- STAGE 1: SETUP SCREEN -->
+                <div id="stage-setup" class="saas-card p-6 sm:p-10 max-w-2xl mx-auto w-full my-auto space-y-6">
+                    <div class="text-center space-y-2">
+                        <div class="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-2xl mx-auto shadow-sm">
+                            <i class="fa-solid fa-microphone-lines"></i>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Configure Your Viva Examination</h2>
+                        <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+                            The AI examiner will ask viva questions verbally. Speak your answer or type responses while our real-time computer vision monitors attention.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Interview Subject / Topic</label>
+                            <input type="text" id="setup-topic" class="w-full saas-input text-xs sm:text-sm" placeholder="e.g. Operating Systems, Cloud Computing, Data Structures, DBMS">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Academic Rigor / Difficulty</label>
+                                <select id="setup-difficulty" class="w-full saas-input text-xs sm:text-sm font-semibold cursor-pointer">
+                                    <option value="easy">Introductory / Foundational (Easy)</option>
+                                    <option value="medium" selected>Standard Engineering Viva (Medium)</option>
+                                    <option value="hard">Advanced Problem Solving (Hard)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Viva Question Count</label>
+                                <select id="setup-count" class="w-full saas-input text-xs sm:text-sm font-semibold cursor-pointer">
+                                    <option value="3">Short Assessment (3 Questions)</option>
+                                    <option value="5" selected>Standard Viva (5 Questions)</option>
+                                    <option value="7">Comprehensive Exam (7 Questions)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Syllabus Document Association (Optional) -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Reference Document (Optional)</label>
+                            <select id="setup-doc-select" class="w-full saas-input text-xs sm:text-sm cursor-pointer">
+                                <option value="">-- General Course Subject (No specific doc) --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button id="start-interview-trigger-btn" class="btn-primary w-full py-3.5 text-sm font-bold shadow-md shadow-indigo-100 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play text-xs"></i> Initialize Camera & Begin Viva
+                    </button>
+                </div>
+
+                <!-- STAGE 2: LOADING SCREEN -->
+                <div id="stage-loading" class="hidden saas-card p-12 max-w-md mx-auto w-full my-auto text-center space-y-4">
+                    <i class="fa-solid fa-spinner fa-spin text-indigo-600 text-4xl mb-2"></i>
+                    <h3 class="text-lg font-extrabold text-slate-900 tracking-tight" id="loading-title">Preparing Your Examination...</h3>
+                    <p class="text-xs text-slate-500" id="loading-sub">Requesting camera feed and generating tailored viva questions via Gemini AI.</p>
+                </div>
+
+                <!-- STAGE 3: ACTIVE LIVE INTERVIEW SCREEN -->
+                <div id="stage-active" class="hidden flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+                    
+                    <!-- Left: Camera & Visual Feed Area (7 cols on lg) -->
+                    <div class="lg:col-span-7 flex flex-col gap-4">
+                        
+                        <!-- Live Video Viewport -->
+                        <div class="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 shadow-md flex items-center justify-center">
+                            <video id="live-camera" autoplay muted playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
+                            <canvas id="camera-overlay" class="absolute inset-0 w-full h-full pointer-events-none transform -scale-x-100"></canvas>
+
+                            <!-- Top Status Badges -->
+                            <div class="absolute top-3 left-3 flex items-center gap-2">
+                                <div class="bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full border border-slate-700 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="camera-dot"></span>
+                                    <span class="text-[10px] font-bold text-white uppercase tracking-wider" id="camera-status-label">Camera Live</span>
+                                </div>
+                                <div id="followup-indicator" class="hidden bg-indigo-600 text-white px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider items-center gap-1.5 shadow-md">
+                                    <i class="fa-solid fa-arrows-split-up-and-left"></i> AI Probe Follow-Up
+                                </div>
+                            </div>
+
+                            <!-- Hardware Device Controls Overlay -->
+                            <div class="absolute top-3 right-3 flex items-center gap-2">
+                                <button id="cam-toggle-btn" class="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-white flex items-center justify-center border border-slate-700 text-xs transition-colors" title="Toggle Camera">
+                                    <i class="fa-solid fa-video" id="cam-icon"></i>
+                                </button>
+                                <button id="mic-toggle-btn" class="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-white flex items-center justify-center border border-slate-700 text-xs transition-colors" title="Toggle Mic">
+                                    <i class="fa-solid fa-microphone" id="mic-icon"></i>
+                                </button>
+                            </div>
+
+                            <!-- Permission / Denied Overlay -->
+                            <div id="cam-permission-error" class="hidden absolute inset-0 bg-slate-900/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center text-white">
+                                <i class="fa-solid fa-video-slash text-rose-500 text-3xl mb-3"></i>
+                                <h4 class="font-bold text-sm mb-1">Camera Access Required</h4>
+                                <p class="text-xs text-slate-300 max-w-sm mb-4">Please allow camera permissions in your browser to enable live viva face & focus verification.</p>
+                                <button onclick="requestCameraAccess()" class="btn-primary text-xs py-2 px-4">
+                                    <i class="fa-solid fa-rotate-right text-xs"></i> Grant Camera Permission
+                                </button>
+                            </div>
+
+                            <!-- Bottom Audio Speaking Subtitle Overlay -->
+                            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/95 via-slate-950/75 to-transparent p-4 sm:p-5 text-left">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[10px] font-extrabold text-indigo-400 uppercase tracking-wider" id="active-q-index">Question 1 of 5</span>
+                                    <button onclick="repeatQuestionSpeech()" class="text-xs text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 font-semibold">
+                                        <i class="fa-solid fa-volume-high text-xs"></i> Repeat Audio
+                                    </button>
+                                </div>
+                                <p class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-3" id="active-question-text">
+                                    Loading question...
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Real-Time Focus Metrics Panel -->
+                        <div class="saas-card p-4 space-y-3">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-xs font-bold tracking-wider uppercase text-slate-700 flex items-center gap-2">
+                                    <i class="fa-solid fa-eye text-indigo-600"></i> Attention & Eye-Tracking Telemetry
+                                </h3>
+                                <span class="badge badge-indigo text-[10px]" id="overall-status-badge">Focused</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                    <span class="text-[10px] font-bold text-slate-400 block uppercase">Face Visibility</span>
+                                    <span class="text-xs font-bold text-slate-800" id="metric-face">Visible</span>
+                                </div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                    <span class="text-[10px] font-bold text-slate-400 block uppercase">Eye State (EAR)</span>
+                                    <span class="text-xs font-bold text-slate-800" id="metric-eyes">Open (0.28)</span>
+                                </div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                    <span class="text-[10px] font-bold text-slate-400 block uppercase">Head Pose</span>
+                                    <span class="text-xs font-bold text-slate-800" id="metric-head">Centered</span>
+                                </div>
+                                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                    <span class="text-[10px] font-bold text-slate-400 block uppercase">Drowsiness Risk</span>
+                                    <span class="text-xs font-bold text-emerald-600" id="metric-drowsy">Low / Normal</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Viva Response & Transcript Panel (5 cols on lg) -->
+                    <div class="lg:col-span-5 flex flex-col gap-4">
+                        
+                        <!-- Response Form Card -->
+                        <div class="saas-card p-5 flex-1 flex flex-col justify-between">
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-sm font-extrabold text-slate-900 tracking-tight">Candidate Response</h3>
+                                    <span class="text-[11px] font-medium text-slate-400" id="input-mode-label">Speech-to-Text Enabled</span>
+                                </div>
+
+                                <!-- Response Textarea -->
+                                <div>
+                                    <textarea id="candidate-answer" class="w-full h-36 sm:h-44 saas-input text-xs sm:text-sm resize-none" placeholder="Click 'Speak Answer' to talk aloud, or type your response here..."></textarea>
+                                </div>
+
+                                <!-- Live Speech Transcript Box (when microphone active) -->
+                                <div id="live-transcript-box" class="hidden p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs text-indigo-900">
+                                    <div class="flex items-center gap-2 mb-1 text-[11px] font-bold text-indigo-700">
+                                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                                        <span>Listening Live...</span>
+                                    </div>
+                                    <p class="italic text-slate-600" id="interim-transcript">Transcribing your voice...</p>
+                                </div>
+
+                                <!-- Microphone Access Alert -->
+                                <div id="mic-warning" class="hidden p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-2">
+                                    <i class="fa-solid fa-microphone-slash"></i>
+                                    <span>Microphone unavailable. You may type your response in the box above.</span>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="space-y-3 pt-4 border-t border-slate-100">
+                                <div class="flex items-center justify-between gap-3">
+                                    <button id="voice-answer-btn" class="btn-secondary text-xs py-2.5 px-4 flex items-center gap-2">
+                                        <i class="fa-solid fa-microphone text-indigo-600 text-xs" id="voice-mic-icon"></i>
+                                        <span id="voice-btn-text">Voice Answer</span>
+                                    </button>
+                                    
+                                    <button id="submit-answer-btn" class="btn-primary text-xs py-2.5 px-5 flex items-center gap-2">
+                                        <span id="submit-btn-text">Submit Answer</span>
+                                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-1">
+                                    <button onclick="pauseResumeInterview()" class="text-xs text-slate-500 hover:text-slate-700 font-semibold flex items-center gap-1.5" id="pause-interview-btn">
+                                        <i class="fa-solid fa-pause"></i> <span>Pause Interview</span>
+                                    </button>
+                                    <button onclick="confirmEndInterview()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1.5">
+                                        <i class="fa-solid fa-circle-stop"></i> <span>End Exam</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- STAGE 4: EXAMINER'S PERFORMANCE REPORT -->
+                <div id="stage-report" class="hidden saas-card p-6 sm:p-8 max-w-4xl mx-auto w-full my-auto space-y-6">
+                    <div class="text-center space-y-2">
+                        <span class="badge badge-teal">Evaluation Report Persisted</span>
+                        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Viva Performance Assessment</h2>
+                        <p class="text-xs text-slate-500" id="report-topic-summary">Topic: General Engineering • Assessment Completed</p>
+                    </div>
+
+                    <!-- Summary Score Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">Examiner Score</span>
+                            <span class="text-2xl font-black text-indigo-600" id="report-score">0/10</span>
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">Focus Score</span>
+                            <span class="text-2xl font-black text-emerald-600" id="report-focus">100%</span>
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">Questions</span>
+                            <span class="text-2xl font-black text-slate-800" id="report-questions-count">5</span>
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 block uppercase">Drowsiness Events</span>
+                            <span class="text-2xl font-black text-slate-800" id="report-drowsy-count">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Q&A Breakdown -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Detailed Feedback & Model Answers</h3>
+                        <div id="report-questions-list" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Action Navigation Footer -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100">
+                        <button onclick="window.location.href='dashboard.html'" class="btn-secondary text-xs py-2.5 px-4">
+                            <i class="fa-solid fa-arrow-left text-xs"></i> Back to Dashboard
+                        </button>
+                        <div class="flex items-center gap-3">
+                            <button onclick="window.location.href='reports.html'" class="btn-secondary text-xs py-2.5 px-4">
+                                <i class="fa-solid fa-chart-line text-xs"></i> View Full Analytics
+                            </button>
+                            <button onclick="resetToSetup()" class="btn-primary text-xs py-2.5 px-5">
+                                <i class="fa-solid fa-rotate-right text-xs"></i> Retake Interview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        let mediaStream = null;
+        let focusDetector = null;
+        let interviewQuestions = [];
+        let currentQIndex = 0;
+        let studentAnswers = [];
+        let isAnsweringFollowUp = false;
+        let interviewStartTime = 0;
+        let timerInterval = null;
+        let elapsedSeconds = 0;
+        let isInterviewPaused = false;
+        let speechRecognition = null;
+        let isSpeechRecording = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            api.requireAuth();
+
+            // Populate syllabus document selector
+            loadDocumentsForSelection();
+
+            // Initialize sound toggle
+            const toggleSoundBtn = document.getElementById('toggle-sound-btn');
+            const soundIcon = document.getElementById('sound-icon');
+            let soundEnabled = true;
+
+            toggleSoundBtn.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                if (focusDetector) focusDetector.soundAlertEnabled = soundEnabled;
+                soundIcon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-rose-500';
+                window.showToast(soundEnabled ? 'Audio alerts enabled' : 'Audio alerts muted', 'info');
+            });
+
+            // Start Interview Trigger
+            document.getElementById('start-interview-trigger-btn').addEventListener('click', startVivaSetup);
+
+            // Submit Answer Button
+            document.getElementById('submit-answer-btn').addEventListener('click', handleSubmitAnswer);
+
+            // Voice Answer Toggle
+            setupVoiceRecognition();
+
+            // Camera & Mic toggles
+            setupDeviceToggles();
+        });
+
+        async function loadDocumentsForSelection() {
+            try {
+                const docs = await api.getDocuments();
+                const sel = document.getElementById('setup-doc-select');
+                if (Array.isArray(docs)) {
+                    docs.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d._id;
+                        opt.innerText = `${d.subject} (${d.type} - Sem ${d.semester})`;
+                        sel.appendChild(opt);
+                    });
+                }
+            } catch(e) {}
+        }
+
+        async function startVivaSetup() {
+            const topic = document.getElementById('setup-topic').value.trim() || 'General Academic Topic';
+            const difficulty = document.getElementById('setup-difficulty').value;
+            const count = parseInt(document.getElementById('setup-count').value) || 5;
+            const docId = document.getElementById('setup-doc-select').value || null;
+
+            // Switch to Loading Screen
+            document.getElementById('stage-setup').classList.add('hidden');
+            document.getElementById('stage-loading').classList.remove('hidden');
+
+            try {
+                // 1. Request camera
+                const camSuccess = await requestCameraAccess();
+                if (!camSuccess) {
+                    throw new Error("Camera permission denied. The viva requires camera access for focus monitoring.");
+                }
+
+                // 2. Fetch Questions from Gemini backend
+                document.getElementById('loading-title').innerText = "Generating Viva Questions...";
+                document.getElementById('loading-sub').innerText = `Analyzing concepts for "${topic}" via Gemini AI`;
+
+                const res = await api.generateQuestions({
+                    documentId: docId,
+                    topic,
+                    difficultyLevel: difficulty,
+                    questionCount: count
+                });
+
+                interviewQuestions = res.questions || [];
+                if (interviewQuestions.length === 0) {
+                    throw new Error("No viva questions were generated. Please try a different topic.");
+                }
+
+                currentQIndex = 0;
+                studentAnswers = [];
+                isAnsweringFollowUp = false;
+
+                // 3. Initialize Computer Vision Focus Detector
+                initFocusDetector();
+
+                // 4. Switch to Active Screen
+                document.getElementById('stage-loading').classList.add('hidden');
+                document.getElementById('stage-active').classList.remove('hidden');
+
+                // 5. Start Session Timer
+                startInterviewTimer();
+
+                // 6. Present First Question
+                presentCurrentQuestion();
+
+            } catch(err) {
+                console.error("Viva setup error:", err);
+                window.showToast(err.message, 'error');
+                document.getElementById('stage-loading').classList.add('hidden');
+                document.getElementById('stage-setup').classList.remove('hidden');
+            }
+        }
+
+        async function requestCameraAccess() {
+            try {
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(t => t.stop());
+                }
+
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+                    audio: true
+                });
+
+                window.__activeWebcamStream = mediaStream;
+                const video = document.getElementById('live-camera');
+                video.srcObject = mediaStream;
+
+                document.getElementById('cam-permission-error').classList.add('hidden');
+                document.getElementById('camera-dot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                document.getElementById('camera-status-label').innerText = 'Camera Live';
+                return true;
+            } catch(e) {
+                console.error("Camera permission error:", e);
+                document.getElementById('cam-permission-error').classList.remove('hidden');
+                document.getElementById('camera-dot').className = 'w-2 h-2 rounded-full bg-rose-500';
+                document.getElementById('camera-status-label').innerText = 'Camera Blocked';
+                return false;
+            }
+        }
+
+        function initFocusDetector() {
+            const video = document.getElementById('live-camera');
+            const canvas = document.getElementById('camera-overlay');
+
+            focusDetector = new FocusDetector({
+                videoElement: video,
+                overlayCanvas: canvas,
+                modelsPath: '/models',
+                onMetricsUpdate: (metrics) => {
+                    // Update telemetry UI
+                    document.getElementById('metric-face').innerText = metrics.faceDetected ? 'Visible' : 'Absent';
+                    document.getElementById('metric-face').className = metrics.faceDetected ? 'text-xs font-bold text-emerald-600' : 'text-xs font-bold text-rose-500';
+
+                    document.getElementById('metric-eyes').innerText = metrics.eyesClosed ? `Closed (${metrics.ear})` : `Open (${metrics.ear})`;
+                    document.getElementById('metric-eyes').className = metrics.eyesClosed ? 'text-xs font-bold text-rose-500' : 'text-xs font-bold text-slate-800';
+
+                    const poseNames = { centered: 'Centered', turned_left: 'Turned Left', turned_right: 'Turned Right', downward: 'Tilted Down' };
+                    document.getElementById('metric-head').innerText = poseNames[metrics.headPose] || 'Centered';
+                    document.getElementById('metric-head').className = metrics.headPose === 'centered' ? 'text-xs font-bold text-slate-800' : 'text-xs font-bold text-amber-600';
+
+                    document.getElementById('metric-drowsy').innerText = metrics.isDrowsy ? 'HIGH RISK' : (metrics.isDistracted ? 'Caution' : 'Normal');
+                    document.getElementById('metric-drowsy').className = metrics.isDrowsy ? 'text-xs font-bold text-rose-600' : 'text-xs font-bold text-emerald-600';
+                },
+                onWarning: (warning) => {
+                    const banner = document.getElementById('cv-warning-banner');
+                    const title = document.getElementById('cv-warning-title');
+                    const desc = document.getElementById('cv-warning-desc');
+                    const iconBox = document.getElementById('cv-warning-icon');
+
+                    banner.classList.remove('hidden');
+                    if (warning.level === 'danger') {
+                        banner.className = 'mb-4 p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-900 flex items-center justify-between shadow-sm';
+                        iconBox.className = 'w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center text-sm shrink-0';
+                        title.innerText = 'Drowsiness Alert';
+                    } else {
+                        banner.className = 'mb-4 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 flex items-center justify-between shadow-sm';
+                        iconBox.className = 'w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-sm shrink-0';
+                        title.innerText = 'Focus Caution';
+                    }
+                    desc.innerText = warning.message;
+                },
+                onStatusChange: (status, label) => {
+                    const badge = document.getElementById('overall-status-badge');
+                    badge.innerText = label;
+                    if (status === 'focused') badge.className = 'badge badge-teal text-[10px]';
+                    else if (status === 'drowsy') badge.className = 'badge badge-amber text-[10px] text-rose-700 bg-rose-50 border-rose-200';
+                    else if (status === 'distracted') badge.className = 'badge badge-amber text-[10px]';
+                    else badge.className = 'badge badge-slate text-[10px]';
+                }
+            });
+
+            focusDetector.start(video).catch(e => console.warn("Detector init warning:", e));
+        }
+
+        window.dismissWarning = function() {
+            document.getElementById('cv-warning-banner').classList.add('hidden');
+        };
+
+        function presentCurrentQuestion() {
+            if (currentQIndex >= interviewQuestions.length) {
+                finishInterview();
+                return;
+            }
+
+            const qText = interviewQuestions[currentQIndex];
+            document.getElementById('active-q-index').innerText = `Question ${currentQIndex + 1} of ${interviewQuestions.length}`;
+            document.getElementById('active-question-text').innerText = qText;
+            document.getElementById('candidate-answer').value = '';
+            document.getElementById('followup-indicator').classList.add('hidden');
+            document.getElementById('followup-indicator').classList.remove('flex');
+            isAnsweringFollowUp = false;
+
+            speakQuestion(qText);
+        }
+
+        function speakQuestion(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(text);
+                utter.rate = 1.0;
+                window.speechSynthesis.speak(utter);
+            }
+        }
+
+        window.repeatQuestionSpeech = function() {
+            const qText = document.getElementById('active-question-text').innerText;
+            speakQuestion(qText);
+        };
+
+        async function handleSubmitAnswer() {
+            const answer = document.getElementById('candidate-answer').value.trim();
+            if (!answer) {
+                window.showToast("Please provide or speak an answer before submitting.", "warning");
+                return;
+            }
+
+            // Stop speech recognition if active
+            stopVoiceRecognition();
+
+            const currentQ = document.getElementById('active-question-text').innerText;
+            studentAnswers.push({
+                question: currentQ,
+                answer: answer
+            });
+
+            const submitBtn = document.getElementById('submit-answer-btn');
+            const submitText = document.getElementById('submit-btn-text');
+            submitBtn.disabled = true;
+            submitText.innerText = "Analyzing Answer...";
+
+            try {
+                // If not answering follow-up, check with Gemini if follow-up probing is warranted
+                if (!isAnsweringFollowUp) {
+                    const topic = document.getElementById('setup-topic').value || 'Course Subject';
+                    const docId = document.getElementById('setup-doc-select').value || null;
+
+                    const followUpData = await api.generateFollowUp({
+                        documentId: docId,
+                        currentQuestion: currentQ,
+                        studentAnswer: answer,
+                        topic: topic
+                    });
+
+                    if (followUpData.hasFollowUp && followUpData.followUpQuestion) {
+                        isAnsweringFollowUp = true;
+                        document.getElementById('active-question-text').innerText = followUpData.followUpQuestion;
+                        document.getElementById('candidate-answer').value = '';
+                        document.getElementById('followup-indicator').classList.remove('hidden');
+                        document.getElementById('followup-indicator').classList.add('flex');
+                        speakQuestion(followUpData.followUpQuestion);
+                        window.showToast("The examiner has a follow-up probing question.", "info");
+
+                        submitBtn.disabled = false;
+                        submitText.innerText = "Submit Answer";
+                        return;
+                    }
+                }
+
+                // Move to next question
+                currentQIndex++;
+                submitBtn.disabled = false;
+                submitText.innerText = "Submit Answer";
+                presentCurrentQuestion();
+
+            } catch(e) {
+                console.warn("Follow-up error:", e);
+                currentQIndex++;
+                submitBtn.disabled = false;
+                submitText.innerText = "Submit Answer";
+                presentCurrentQuestion();
+            }
+        }
+
+        async function finishInterview() {
+            // Stop timers and tracking
+            if (timerInterval) clearInterval(timerInterval);
+            let focusSummary = { totalDurationMs: elapsedSeconds * 1000, focusedMs: elapsedSeconds * 1000, focusPercentage: 100, drowsinessEventsCount: 0 };
+            if (focusDetector) {
+                focusSummary = focusDetector.stop();
+            }
+
+            stopCameraStream();
+
+            // Switch to loading
+            document.getElementById('stage-active').classList.add('hidden');
+            document.getElementById('stage-loading').classList.remove('hidden');
+            document.getElementById('loading-title').innerText = "Compiling Viva Evaluation...";
+            document.getElementById('loading-sub').innerText = "AI examiner is reviewing your technical responses and formulating detailed scores.";
+
+            try {
+                const topic = document.getElementById('setup-topic').value || 'Engineering Viva';
+                const difficulty = document.getElementById('setup-difficulty').value;
+                const docId = document.getElementById('setup-doc-select').value || null;
+
+                const evalPayload = {
+                    documentId: docId,
+                    studentAnswersArray: studentAnswers,
+                    totalTime: focusSummary.totalDurationMs,
+                    focusedTime: focusSummary.focusedMs,
+                    distractedTime: focusSummary.distractedMs || 0,
+                    difficultyLevel: difficulty,
+                    topic: topic
+                };
+
+                const reportData = await api.evaluateSession(evalPayload);
+
+                // Render report
+                renderReportUI(reportData, focusSummary);
+
+                document.getElementById('stage-loading').classList.add('hidden');
+                document.getElementById('stage-report').classList.remove('hidden');
+                window.showToast("Viva examination successfully evaluated and saved!", "success");
+
+            } catch(err) {
+                console.error("Evaluation error:", err);
+                window.showToast("Failed to compile evaluation: " + err.message, "error");
+                document.getElementById('stage-loading').classList.add('hidden');
+                document.getElementById('stage-setup').classList.remove('hidden');
+            }
+        }
+
+        function renderReportUI(data, focusSummary) {
+            const report = data.report || {};
+            const avgScore = typeof report.average_score === 'number' ? report.average_score : 8;
+            document.getElementById('report-score').innerText = `${avgScore}/10`;
+            document.getElementById('report-focus').innerText = `${focusSummary.focusPercentage || 100}%`;
+            document.getElementById('report-questions-count').innerText = studentAnswers.length;
+            document.getElementById('report-drowsy-count').innerText = focusSummary.drowsinessEventsCount || 0;
+
+            const list = document.getElementById('report-questions-list');
+            list.innerHTML = '';
+
+            const evaluations = Array.isArray(data.evaluation) ? data.evaluation : [];
+
+            studentAnswers.forEach((ans, idx) => {
+                const evalItem = evaluations[idx] || {};
+                const score = evalItem.score !== undefined ? evalItem.score : 8;
+                const feedback = evalItem.feedback || 'Good articulation of core principles.';
+                const modelAnswer = evalItem.model_answer || 'Complete academic solution provided in curriculum notes.';
+
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-2';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-indigo-600">Question ${idx + 1}</span>
+                        <span class="badge ${score >= 7 ? 'badge-teal' : (score >= 5 ? 'badge-amber' : 'badge-rose')} text-xs">
+                            Score: ${score}/10
+                        </span>
+                    </div>
+                    <p class="font-bold text-xs sm:text-sm text-slate-900">${ans.question}</p>
+                    <div class="p-2.5 rounded-lg bg-white border border-slate-200">
+                        <span class="text-[10px] font-bold text-slate-400 block uppercase">Your Response:</span>
+                        <p class="text-xs text-slate-700 italic">"${ans.answer}"</p>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-indigo-50/70 border border-indigo-100">
+                        <span class="text-[10px] font-bold text-indigo-700 block uppercase">Examiner Feedback:</span>
+                        <p class="text-xs text-slate-800">${feedback}</p>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function resetToSetup() {
+            document.getElementById('stage-report').classList.add('hidden');
+            document.getElementById('stage-setup').classList.remove('hidden');
+        }
+
+        // Voice Recognition (Speech-to-Text)
+        function setupVoiceRecognition() {
+            const voiceBtn = document.getElementById('voice-answer-btn');
+            const voiceText = document.getElementById('voice-btn-text');
+            const micIcon = document.getElementById('voice-mic-icon');
+            const transcriptBox = document.getElementById('live-transcript-box');
+            const interimTranscript = document.getElementById('interim-transcript');
+
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                document.getElementById('mic-warning').classList.remove('hidden');
+                document.getElementById('mic-warning').innerHTML = `<span>Speech recognition is not supported in this browser. Please type your answers.</span>`;
+                voiceBtn.classList.add('hidden');
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRecognition = new SpeechRecognition();
+            speechRecognition.continuous = true;
+            speechRecognition.interimResults = true;
+            speechRecognition.lang = 'en-US';
+            window.__activeSpeechRecognition = speechRecognition;
+
+            voiceBtn.addEventListener('click', () => {
+                if (isSpeechRecording) {
+                    stopVoiceRecognition();
+                } else {
+                    startVoiceRecognition();
+                }
+            });
+
+            speechRecognition.onresult = (event) => {
+                let interim = '';
+                let final = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final += event.results[i][0].transcript + ' ';
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+
+                if (final) {
+                    const txt = document.getElementById('candidate-answer');
+                    txt.value = (txt.value + ' ' + final).trim();
+                }
+                if (interim) {
+                    interimTranscript.innerText = interim;
+                }
+            };
+
+            speechRecognition.onerror = (e) => {
+                console.warn("Speech error:", e);
+                stopVoiceRecognition();
+            };
+
+            speechRecognition.onend = () => {
+                if (isSpeechRecording) {
+                    stopVoiceRecognition();
+                }
+            };
+        }
+
+        function startVoiceRecognition() {
+            try {
+                speechRecognition.start();
+                isSpeechRecording = true;
+                document.getElementById('voice-btn-text').innerText = "Stop Speaking";
+                document.getElementById('voice-mic-icon').className = "fa-solid fa-microphone-slash text-rose-600";
+                document.getElementById('live-transcript-box').classList.remove('hidden');
+            } catch(e) {}
+        }
+
+        function stopVoiceRecognition() {
+            if (speechRecognition && isSpeechRecording) {
+                try { speechRecognition.stop(); } catch(e) {}
+                isSpeechRecording = false;
+                document.getElementById('voice-btn-text').innerText = "Voice Answer";
+                document.getElementById('voice-mic-icon').className = "fa-solid fa-microphone text-indigo-600";
+                document.getElementById('live-transcript-box').classList.add('hidden');
+            }
+        }
+
+        function setupDeviceToggles() {
+            const camBtn = document.getElementById('cam-toggle-btn');
+            const camIcon = document.getElementById('cam-icon');
+            let videoTrackEnabled = true;
+
+            camBtn.addEventListener('click', () => {
+                if (mediaStream) {
+                    const vTracks = mediaStream.getVideoTracks();
+                    if (vTracks.length > 0) {
+                        videoTrackEnabled = !videoTrackEnabled;
+                        vTracks[0].enabled = videoTrackEnabled;
+                        camIcon.className = videoTrackEnabled ? 'fa-solid fa-video' : 'fa-solid fa-video-slash text-rose-400';
+                        document.getElementById('camera-status-label').innerText = videoTrackEnabled ? 'Camera Live' : 'Camera Muted';
+                    }
+                }
+            });
+
+            const micBtn = document.getElementById('mic-toggle-btn');
+            const micIcon = document.getElementById('mic-icon');
+            let audioTrackEnabled = true;
+
+            micBtn.addEventListener('click', () => {
+                if (mediaStream) {
+                    const aTracks = mediaStream.getAudioTracks();
+                    if (aTracks.length > 0) {
+                        audioTrackEnabled = !audioTrackEnabled;
+                        aTracks[0].enabled = audioTrackEnabled;
+                        micIcon.className = audioTrackEnabled ? 'fa-solid fa-microphone' : 'fa-solid fa-microphone-slash text-rose-400';
+                    }
+                }
+            });
+        }
+
+        function stopCameraStream() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+                mediaStream = null;
+            }
+            window.__activeWebcamStream = null;
+        }
+
+        function startInterviewTimer() {
+            elapsedSeconds = 0;
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isInterviewPaused) {
+                    elapsedSeconds++;
+                    const hrs = Math.floor(elapsedSeconds / 3600);
+                    const mins = Math.floor((elapsedSeconds % 3600) / 60);
+                    const secs = elapsedSeconds % 60;
+                    document.getElementById('timer-display').innerText = 
+                        `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                    if (focusDetector) {
+                        const sum = focusDetector.getSessionSummary();
+                        document.getElementById('header-focus-pct').innerText = `${sum.focusPercentage}%`;
+                    }
+                }
+            }, 1000);
+        }
+
+        window.pauseResumeInterview = function() {
+            isInterviewPaused = !isInterviewPaused;
+            const btn = document.getElementById('pause-interview-btn');
+            if (isInterviewPaused) {
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> <span>Resume Interview</span>';
+                if (focusDetector) focusDetector.pause();
+                window.showToast('Interview paused', 'info');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-pause"></i> <span>Pause Interview</span>';
+                if (focusDetector) focusDetector.resume();
+                window.showToast('Interview resumed', 'info');
+            }
+        };
+
+        window.confirmEndInterview = function() {
+            if (confirm("Are you sure you want to conclude this viva session and generate your examiner assessment?")) {
+                finishInterview();
+            }
+        };
+
+        window.handleExitInterview = function() {
+            if (document.getElementById('stage-active') && !document.getElementById('stage-active').classList.contains('hidden')) {
+                if (!confirm("An active viva examination is in progress. Exit without saving?")) return;
+            }
+            stopCameraStream();
+            if (focusDetector) focusDetector.stop();
+            window.smartBack('dashboard.html');
+        };
+
+        window.addEventListener('beforeunload', () => {
+            stopCameraStream();
+            if (focusDetector) focusDetector.stop();
+        });
+    </script>
+</body>
+</html>

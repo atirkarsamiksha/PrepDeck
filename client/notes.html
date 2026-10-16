@@ -1,129 +1,165 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notes - PrepDeck</title>
+    <title>Study Library (Notes) — PrepDeck</title>
+    <script>
+        if (!localStorage.getItem('prepdeck_token')) {
+            window.location.replace('auth.html?mode=login');
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
-        darkMode: 'class',
-        theme: { 
-            extend: { 
-                colors: { 
-                    cyanBg: '#08e3d6',
-                    primary: '#08e3d6',
-                    secondary: '#a855f7',
-                    darkbg: '#0a0a0c',
-                    panelbg: '#141416',
-                    cardbg: '#181a1f'
-                },
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif'],
-                }
-            } 
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+              }
+            },
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            }
+          }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        
-        /* Custom scrollbar for main content */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #2a2a30; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3a3a40; }
-    </style>
+    <script src="js/api.js"></script>
 </head>
-<body class="bg-darkbg text-slate-100 h-screen p-4 xl:p-6 flex justify-center font-sans overflow-hidden">
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
 
-    <!-- Centered Max-Width Container -->
-    <div class="max-w-[1400px] w-full flex flex-col h-full overflow-hidden">
+    <!-- Mobile Top Navigation Header -->
+    <header class="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                <i class="fa-solid fa-graduation-cap text-xs"></i>
+            </div>
+            <span class="font-bold text-base text-slate-900">PrepDeck</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openProfileModal()" id="mobile-top-avatar" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
+                ?
+            </button>
+            <button onclick="api.logout()" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 transition-colors" title="Logout">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-[1500px] w-full mx-auto flex-1 flex flex-col lg:flex-row p-4 sm:p-6 lg:p-8 gap-6">
         
-        <!-- Top Navbar -->
-        <header class="w-full flex justify-between items-center mb-4 px-2 shrink-0">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-wand-magic-sparkles text-primary text-2xl drop-shadow-[0_0_10px_rgba(8,227,214,0.3)]"></i>
-                <span class="text-2xl font-bold tracking-tight text-white">PrepDeck</span>
-            </div>
-            
-            <div class="flex items-center gap-6">
-                <nav class="hidden md:flex gap-6 text-sm font-semibold tracking-wide text-slate-400">
-                    <a href="dashboard.html" class="cursor-pointer hover:text-white transition-colors">Dash</a>
-                    <a href="notes.html" class="text-primary cursor-pointer hover:text-white transition-colors">Notes</a>
-                    <a href="pyqs.html" class="cursor-pointer hover:text-white transition-colors">PYQs</a>
-                    <a href="upload.html" class="cursor-pointer hover:text-white transition-colors">Upload</a>
-                    <a href="reports.html" class="cursor-pointer hover:text-white transition-colors">Reports</a>
-                </nav>
-                <div id="top-avatar" onclick="openProfileModal()" class="w-10 h-10 rounded-full bg-slate-700 overflow-hidden ml-4 shadow-lg border border-slate-600 flex items-center justify-center text-sm font-bold bg-gradient-to-br from-slate-600 to-slate-800 cursor-pointer hover:border-primary transition-colors">
-                    ?
-                </div>
-            </div>
-        </header>
-
-        <!-- Content Area -->
-        <div class="flex flex-1 gap-4 overflow-hidden w-full min-h-0">
-            
-            <!-- Floating Sidebar -->
-            <aside class="w-60 bg-panelbg rounded-3xl p-4 flex flex-col justify-between hidden lg:flex border border-white/5 shadow-2xl h-full flex-shrink-0">
-                <nav class="space-y-1 mt-1">
-                    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-shapes text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Dashboard</span>
-                    </a>
-                    <a href="notes.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 text-white font-semibold transition-colors border border-white/5 shadow-sm hover:shadow-md">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-book-open text-primary text-sm"></i></div>
-                        <span class="text-sm truncate">Study Library</span>
-                    </a>
-                    <a href="pyqs.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-regular fa-file-lines text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Past Papers</span>
-                    </a>
-                    <a href="upload.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-chart-simple text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Uploads</span>
-                    </a>
-                </nav>
-
-                <div class="mt-auto">
-                    <button onclick="api.logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors font-medium mb-3">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-sign-out-alt text-slate-500 transition-colors pointer-events-none text-sm"></i></div>
-                        <span class="text-sm">Logout</span>
-                    </button>
-                    <div onclick="openProfileModal()" class="bg-[#1c1d22] rounded-xl p-3 flex items-center gap-3 border border-white/5 shadow-lg cursor-pointer hover:bg-white/5 hover:border-white/10 transition-all group">
-                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-primary border border-white/10 shrink-0 shadow-inner group-hover:border-primary transition-colors">
-                            <i class="fa-solid fa-user-astronaut text-xs"></i>
-                        </div>
-                        <div class="overflow-hidden">
-                            <p class="text-xs font-bold text-white truncate group-hover:text-primary transition-colors" id="sidebar-name">Loading...</p>
-                            <p class="text-[8px] text-slate-400 font-bold tracking-widest uppercase truncate mt-0.5">Pro Tier Plan</p>
-                        </div>
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between shrink-0 shadow-sm hidden lg:flex h-[calc(100vh-4rem)] sticky top-8">
+            <div class="space-y-6">
+                <!-- Brand -->
+                <a href="dashboard.html" class="flex items-center gap-3 px-2 py-1 text-decoration-none">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-100">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i>
                     </div>
-                </div>
-            </aside>
-
-            <!-- Main Workspace -->
-            <main class="flex-1 overflow-y-auto pr-1 pb-4 min-h-0 flex flex-col">
-                <div class="flex flex-col flex-1 min-h-0">
-                
-                <header class="mb-10 flex justify-between items-end">
                     <div>
-                        <h1 class="text-4xl xl:text-5xl font-extrabold tracking-tight mb-2 text-white">Study Library</h1>
-                        <p class="text-slate-400 font-medium tracking-wide max-w-lg leading-relaxed text-sm">Access and filter all your AI-synthesized syllabus notes.</p>
+                        <span class="font-extrabold text-lg text-slate-900 tracking-tight block leading-none">PrepDeck</span>
+                        <span class="text-[10px] font-semibold text-slate-500 tracking-wider uppercase mt-1 block">Study Workspace</span>
                     </div>
-                    <a href="upload.html" class="px-6 py-3 rounded-full bg-[#08e3d6] text-black font-bold hover:scale-105 transition-transform shadow-[0_0_15px_rgba(8,227,214,0.3)]">
-                        <i class="fa-solid fa-plus mr-2"></i> Upload Note
-                    </a>
-                </header>
+                </a>
 
-                <!-- Filter Bar -->
-                <div class="bg-cardbg p-6 rounded-[2rem] border border-white/5 shadow-xl mb-10" id="notes-filter">
-                    <div class="flex flex-col md:flex-row gap-4 items-end">
-                        <div class="flex-1 w-full relative">
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Semester</label>
-                            <select id="filter-semester" class="w-full bg-[#050505] border border-white/5 text-slate-200 text-sm font-bold rounded-2xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-primary appearance-none">
+                <!-- Navigation Links -->
+                <nav class="space-y-1.5 pt-2">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fa-solid fa-shapes text-sm w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="interview.html" class="nav-link">
+                        <i class="fa-solid fa-video text-sm w-5 text-center"></i>
+                        <span>Live Viva Interview</span>
+                    </a>
+                    <a href="notes.html" class="nav-link active">
+                        <i class="fa-solid fa-book-open text-sm w-5 text-center"></i>
+                        <span>Study Library</span>
+                    </a>
+                    <a href="pyqs.html" class="nav-link">
+                        <i class="fa-regular fa-file-lines text-sm w-5 text-center"></i>
+                        <span>Past Papers</span>
+                    </a>
+                    <a href="upload.html" class="nav-link">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm w-5 text-center"></i>
+                        <span>Upload Documents</span>
+                    </a>
+                    <a href="reports.html" class="nav-link">
+                        <i class="fa-solid fa-chart-line text-sm w-5 text-center"></i>
+                        <span>Analytics & Reports</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Bottom User & Logout -->
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+                <div onclick="openProfileModal()" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-200">
+                    <div id="sidebar-avatar" class="w-9 h-9 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0">
+                        ?
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-xs font-bold text-slate-900 truncate" id="sidebar-name">Scholar</p>
+                        <p class="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Pro Tier Active</p>
+                    </div>
+                    <i class="fa-solid fa-gear text-slate-400 text-xs"></i>
+                </div>
+
+                <button onclick="api.logout()" id="logout-btn-desktop" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 flex flex-col gap-6 overflow-hidden min-w-0">
+            
+            <!-- Page Header -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-start gap-4">
+                    <button onclick="window.smartBack('dashboard.html')" class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm shrink-0 mt-1" title="Go Back">
+                        <i class="fa-solid fa-arrow-left text-slate-600 text-sm"></i>
+                    </button>
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold mb-2">
+                            <i class="fa-solid fa-book-bookmark text-xs"></i> Course Syllabus Notes
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                            Study Library
+                        </h1>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                            Access syllabus notes, download PDFs, launch focus tracking, or simulate AI viva interviews.
+                        </p>
+                    </div>
+                </div>
+
+                <a href="upload.html?type=Note" class="btn-primary text-xs py-2.5 shrink-0">
+                    <i class="fa-solid fa-plus text-xs"></i> Upload Note
+                </a>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="saas-card p-4 sm:p-5">
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                    <!-- Left: Search and Semester Filter -->
+                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                        <!-- Search Input -->
+                        <div class="sm:col-span-7 relative">
+                            <i class="fa-solid fa-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="filter-subject" placeholder="Search by subject or note title..." class="w-full saas-input pl-9 text-xs">
+                        </div>
+
+                        <!-- Semester Select -->
+                        <div class="sm:col-span-3">
+                            <select id="filter-semester" class="w-full saas-input text-xs font-semibold cursor-pointer">
                                 <option value="">All Semesters</option>
                                 <option value="1">Semester 1</option>
                                 <option value="2">Semester 2</option>
@@ -135,122 +171,354 @@
                                 <option value="8">Semester 8</option>
                             </select>
                         </div>
-                        
-                        <div class="flex-1 w-full relative">
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Subject Search</label>
-                            <input type="text" id="filter-subject" placeholder="Search by subject..." class="w-full bg-[#050505] border border-white/5 text-slate-200 text-sm font-bold rounded-2xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-primary placeholder-slate-600" />
-                            <i class="fa-solid fa-search absolute right-5 top-[42px] text-slate-500"></i>
-                        </div>
 
-                        <div>
-                            <button class="px-8 py-4 rounded-2xl bg-[#1c1d22] hover:bg-[#25262c] text-white font-bold transition-colors border border-white/5" onclick="resetNotesFilters()">
-                                Reset
+                        <!-- Reset Button -->
+                        <div class="sm:col-span-2">
+                            <button onclick="resetFilters()" class="btn-secondary text-xs py-2 w-full justify-center">
+                                <i class="fa-solid fa-rotate-left text-xs"></i> Reset
                             </button>
                         </div>
                     </div>
-                </div>
 
-                <div id="loading" class="text-center py-10 text-primary font-bold">Loading Library...</div>
-                
-                <div id="empty-state" class="hidden text-center py-20 flex flex-col items-center bg-cardbg rounded-[2rem] border border-white/5">
-                    <div class="w-20 h-20 bg-[#192b34] rounded-[2rem] flex items-center justify-center text-4xl text-primary mb-6"><i class="fa-solid fa-folder-open"></i></div>
-                    <h3 class="text-2xl font-extrabold text-white mb-2 tracking-tight">No notes found</h3>
-                    <p class="text-slate-500 mb-8 max-w-md font-medium">Try adjusting your filters or upload a new Note document to get started.</p>
-                    <button onclick="resetNotesFilters()" class="px-8 py-3 rounded-full bg-slate-800 text-white font-bold hover:bg-slate-700 transition-colors">Clear Filters</button>
+                    <!-- Right: Grid / Table View Switcher -->
+                    <div class="inline-flex rounded-xl p-1 bg-slate-100 border border-slate-200 shrink-0 self-end sm:self-center">
+                        <button id="view-mode-grid" onclick="setViewMode('grid')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-indigo-600 shadow-xs" title="Card Grid View">
+                            <i class="fa-solid fa-grip text-xs"></i>
+                            <span>Grid</span>
+                        </button>
+                        <button id="view-mode-table" onclick="setViewMode('table')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-500 hover:text-slate-900" title="Tabular Catalog View">
+                            <i class="fa-solid fa-list text-xs"></i>
+                            <span>Table</span>
+                        </button>
+                    </div>
                 </div>
+            </div>
 
-                <div id="notes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <!-- Notes will be injected here -->
+            <!-- Loading Indicator -->
+            <div id="loading" class="text-center py-16 text-slate-500 text-xs font-semibold">
+                <i class="fa-solid fa-spinner fa-spin text-indigo-600 text-2xl mb-3 block"></i>
+                Loading your syllabus notes...
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center py-16 px-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <div class="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-2xl mx-auto mb-4">
+                    <i class="fa-solid fa-book-open"></i>
                 </div>
+                <h3 class="text-base font-bold text-slate-900 mb-1">No notes match your filter</h3>
+                <p class="text-xs text-slate-500 max-w-sm mx-auto mb-5">Try clearing your filters or upload a new syllabus note document to get started.</p>
+                <div class="flex justify-center gap-3">
+                    <button onclick="resetFilters()" class="btn-secondary text-xs py-2">Clear Filters</button>
+                    <a href="upload.html?type=Note" class="btn-primary text-xs py-2">Upload Note</a>
+                </div>
+            </div>
 
+            <!-- Notes Cards Grid -->
+            <div id="notes-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <!-- Injected via JavaScript in Grid View -->
+            </div>
+
+            <!-- Notes Table Container -->
+            <div id="notes-table-container" class="hidden saas-card p-5 overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
+                            <th class="pb-3 pl-3">Document Title & Subject</th>
+                            <th class="pb-3">Format</th>
+                            <th class="pb-3">Semester</th>
+                            <th class="pb-3">Upload Date</th>
+                            <th class="pb-3">Study Modes</th>
+                            <th class="pb-3 text-right pr-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notes-tbody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- Injected via JavaScript in Table View -->
+                    </tbody>
+                </table>
             </div>
         </main>
     </div>
 
-    <script src="js/api.js"></script>
+    <!-- Mobile Navigation Bottom Bar -->
+    <nav class="lg:hidden bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center sticky bottom-0 z-40 text-[10px] font-bold text-slate-500">
+        <a href="dashboard.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-shapes text-sm"></i>
+            <span>Dash</span>
+        </a>
+        <a href="notes.html" class="flex flex-col items-center gap-1 text-indigo-600">
+            <i class="fa-solid fa-book-open text-sm"></i>
+            <span>Notes</span>
+        </a>
+        <a href="pyqs.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-regular fa-file-lines text-sm"></i>
+            <span>PYQs</span>
+        </a>
+        <a href="upload.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+            <span>Upload</span>
+        </a>
+        <a href="reports.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-chart-line text-sm"></i>
+            <span>Reports</span>
+        </a>
+    </nav>
+
     <script>
-        if(!api.token) window.location.href = 'auth.html';
-        
+        api.requireAuth();
+
+        // Render Scholar name & avatar
         try {
             const userStr = localStorage.getItem('prepdeck_user');
-            if(userStr) {
+            if (userStr) {
                 const user = JSON.parse(userStr);
-                document.getElementById('sidebar-name').innerText = user?.name?.split(' ')[0] || 'Scholar';
-                document.getElementById('top-avatar').innerHTML = user?.name ? user.name.charAt(0).toUpperCase() : '?'; 
+                document.getElementById('sidebar-name').innerText = user?.name || 'Scholar';
+                const initials = user?.name ? user.name.charAt(0).toUpperCase() : '?';
+                document.getElementById('sidebar-avatar').innerText = initials;
+                const mobileAvatar = document.getElementById('mobile-top-avatar');
+                if (mobileAvatar) mobileAvatar.innerText = initials;
             }
         } catch(e) {
-            console.error("Local user load error:", e);
+            console.warn("User load warning:", e);
+        }
+
+        let currentViewMode = localStorage.getItem('prepdeck_view_mode') || 'grid';
+        let cachedNotes = [];
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            localStorage.setItem('prepdeck_view_mode', mode);
+            updateViewButtons();
+            renderNotes(cachedNotes);
+        }
+
+        function updateViewButtons() {
+            const gridBtn = document.getElementById('view-mode-grid');
+            const tableBtn = document.getElementById('view-mode-table');
+            if (!gridBtn || !tableBtn) return;
+            if (currentViewMode === 'table') {
+                gridBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-500 hover:text-slate-900';
+                tableBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-indigo-600 shadow-xs';
+            } else {
+                gridBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-indigo-600 shadow-xs';
+                tableBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-500 hover:text-slate-900';
+            }
+        }
+
+        function getFormatInfo(filename) {
+            const ext = (filename || '').split('.').pop().toLowerCase();
+            if (ext === 'pdf') {
+                return { label: 'PDF', icon: 'fa-solid fa-file-pdf', badgeClass: 'badge-rose', iconColor: 'text-rose-600', iconBg: 'bg-rose-50 border-rose-100' };
+            } else if (ext === 'docx' || ext === 'doc') {
+                return { label: 'DOCX', icon: 'fa-solid fa-file-word', badgeClass: 'badge-indigo', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 border-blue-100' };
+            } else if (ext === 'txt') {
+                return { label: 'TXT', icon: 'fa-solid fa-file-lines', badgeClass: 'badge-slate', iconColor: 'text-slate-600', iconBg: 'bg-slate-50 border-slate-200' };
+            }
+            return { label: 'DOC', icon: 'fa-solid fa-file', badgeClass: 'badge-indigo', iconColor: 'text-indigo-600', iconBg: 'bg-indigo-50 border-indigo-100' };
+        }
+
+        function escapeQuotes(str) {
+            if (!str) return '';
+            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
 
         async function loadNotes() {
-            try {
-                document.getElementById('loading').classList.remove('hidden');
-                document.getElementById('empty-state').classList.add('hidden');
-                document.getElementById('notes-grid').innerHTML = '';
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('empty-state');
+            const grid = document.getElementById('notes-grid');
+            const tableContainer = document.getElementById('notes-table-container');
 
+            loading.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            grid.innerHTML = '';
+            tableContainer.classList.add('hidden');
+
+            try {
                 const sem = document.getElementById('filter-semester').value;
-                const subj = document.getElementById('filter-subject').value;
+                const subj = document.getElementById('filter-subject').value.trim();
 
                 let url = `${API_BASE_URL}/notes?`;
-                if(sem) url += `semester=${sem}&`;
-                if(subj) url += `subject=${subj}`;
+                if (sem) url += `semester=${encodeURIComponent(sem)}&`;
+                if (subj) url += `subject=${encodeURIComponent(subj)}`;
 
                 const res = await fetch(url, { headers: api.getHeaders() });
+                if (res.status === 401) {
+                    api.logout();
+                    return;
+                }
                 const notes = await res.json();
-                
-                document.getElementById('loading').classList.add('hidden');
-                
-                if(notes.length === 0) {
-                    document.getElementById('empty-state').classList.remove('hidden');
+                cachedNotes = Array.isArray(notes) ? notes : [];
+
+                loading.classList.add('hidden');
+
+                if (cachedNotes.length === 0) {
+                    emptyState.classList.remove('hidden');
                     return;
                 }
 
-                const grid = document.getElementById('notes-grid');
+                updateViewButtons();
+                renderNotes(cachedNotes);
+
+            } catch(e) {
+                console.error("Notes error:", e);
+                loading.innerText = "Error loading syllabus notes. Please refresh.";
+            }
+        }
+
+        function renderNotes(notes) {
+            const grid = document.getElementById('notes-grid');
+            const tableContainer = document.getElementById('notes-table-container');
+            const tbody = document.getElementById('notes-tbody');
+
+            grid.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (currentViewMode === 'table') {
+                grid.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+
                 notes.forEach(note => {
-                    const card = document.createElement('div');
-                    // New Card UI
-                    card.className = 'bg-cardbg p-6 rounded-3xl flex flex-col h-full hover:scale-[1.02] hover:-translate-y-1 transition-all border border-white/5 shadow-xl group';
-                    card.innerHTML = `
-                        <div class="flex-grow">
-                            <div class="w-14 h-14 bg-[#192b34] text-[#08e3d6] rounded-2xl flex items-center justify-center text-xl mb-6 shadow-inner group-hover:scale-105 transition-transform">
-                                <i class="fa-solid fa-file-pdf"></i>
+                    const format = getFormatInfo(note.originalName);
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50 transition-colors';
+                    row.innerHTML = `
+                        <td class="py-3.5 pl-3 font-medium">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl ${format.iconBg} border ${format.iconColor} flex items-center justify-center shrink-0">
+                                    <i class="${format.icon} text-sm"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <span class="font-bold text-slate-900 block truncate max-w-[240px] sm:max-w-xs" title="${note.subject}">${note.subject}</span>
+                                    <span class="text-[11px] text-slate-400 font-mono block truncate max-w-[240px] sm:max-w-xs" title="${note.originalName}">${note.originalName}</span>
+                                </div>
                             </div>
-                            <h3 class="font-extrabold text-xl text-white mb-2 tracking-tight line-clamp-1" title="${note.subject}">${note.subject}</h3>
-                            <p class="text-xs text-slate-500 mb-6 truncate font-medium" title="${note.originalName}">${note.originalName}</p>
-                            
-                            <span class="inline-block px-3 py-1.5 bg-[#050505] border border-white/5 rounded-lg text-[10px] font-black uppercase tracking-widest text-[#08e3d6] mb-4">Sem ${note.semester}</span>
+                        </td>
+                        <td class="py-3.5">
+                            <span class="badge ${format.badgeClass}">${format.label}</span>
+                        </td>
+                        <td class="py-3.5 font-semibold text-slate-700">
+                            Sem ${note.semester || '1'}
+                        </td>
+                        <td class="py-3.5 text-slate-500 font-medium">
+                            ${new Date(note.uploadDate).toLocaleDateString()}
+                        </td>
+                        <td class="py-3.5">
+                            <div class="inline-flex items-center gap-1.5">
+                                <a href="study.html?docId=${note._id}" class="btn-primary py-1.5 px-2.5 text-[11px]" title="Study & Focus Meter">
+                                    <i class="fa-solid fa-play text-[10px]"></i> Study
+                                </a>
+                                <a href="interview.html?docId=${note._id}" class="btn-secondary py-1.5 px-2.5 text-[11px]" title="Live AI Viva">
+                                    <i class="fa-solid fa-video text-teal-600 text-[10px]"></i> Viva
+                                </a>
+                                <a href="read_test.html?docId=${note._id}" class="btn-secondary py-1.5 px-2.5 text-[11px]" title="Read & Test Quiz">
+                                    <i class="fa-solid fa-book-open-reader text-amber-600 text-[10px]"></i> Quiz
+                                </a>
+                            </div>
+                        </td>
+                        <td class="py-3.5 text-right pr-3">
+                            <div class="inline-flex items-center gap-1">
+                                <button onclick="handleDownloadDoc('${note._id}', '${escapeQuotes(note.originalName)}', this)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer" title="Download Document">
+                                    <i class="fa-solid fa-download text-xs"></i>
+                                </button>
+                                <button onclick="handleDeleteNote('${note._id}', '${escapeQuotes(note.subject)}')" class="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors" title="Delete Note">
+                                    <i class="fa-regular fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tableContainer.classList.add('hidden');
+                grid.classList.remove('hidden');
+
+                notes.forEach(note => {
+                    const format = getFormatInfo(note.originalName);
+                    const card = document.createElement('div');
+                    card.className = 'saas-card saas-card-hover p-5 flex flex-col justify-between border border-slate-200/90 rounded-2xl bg-white shadow-xs';
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex items-start justify-between gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-xl ${format.iconBg} border ${format.iconColor} flex items-center justify-center shrink-0">
+                                    <i class="${format.icon} text-base"></i>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="badge ${format.badgeClass}">${format.label}</span>
+                                    <span class="badge badge-indigo">Sem ${note.semester || '1'}</span>
+                                    <button onclick="handleDeleteNote('${note._id}', '${escapeQuotes(note.subject)}')" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors ml-1" title="Delete Note">
+                                        <i class="fa-regular fa-trash-can text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h3 class="font-extrabold text-slate-900 text-sm mb-1 line-clamp-1" title="${note.subject}">${note.subject}</h3>
+                            <p class="text-[11px] text-slate-500 truncate mb-4 font-mono" title="${note.originalName}">${note.originalName}</p>
                         </div>
-                        <div class="pt-6 border-t border-white/5 flex justify-between items-center mt-auto">
-                            <span class="text-xs font-bold text-slate-600 tracking-wide">${new Date(note.uploadDate).toLocaleDateString()}</span>
-                            <div class="flex gap-2">
-                                <a href="http://localhost:5000/${note.filePath}" download="${note.originalName}" target="_blank" class="w-10 h-10 rounded-full bg-[#1c1d22] border border-white/5 flex items-center justify-center text-slate-400 group-hover:bg-[#a855f7] group-hover:text-white transition-colors font-medium" title="Download Document">
-                                    <i class="fa-solid fa-download text-sm"></i>
+
+                        <div class="pt-4 border-t border-slate-100 space-y-2.5">
+                            <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                                <span><i class="fa-regular fa-calendar-check mr-1 text-[10px]"></i> ${new Date(note.uploadDate).toLocaleDateString()}</span>
+                                <span class="text-slate-400 font-medium">Syllabus Resource</span>
+                            </div>
+
+                            <a href="study.html?docId=${note._id}" class="btn-primary w-full py-2 text-xs flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play text-[10px]"></i>
+                                <span>Study & Focus Meter</span>
+                            </a>
+
+                            <div class="flex items-center gap-1.5">
+                                <a href="interview.html?docId=${note._id}" class="btn-secondary flex-1 py-1.5 text-[11px] justify-center gap-1.5" title="Live Oral Viva Practice">
+                                    <i class="fa-solid fa-video text-teal-600 text-xs"></i>
+                                    <span>AI Viva</span>
                                 </a>
-                                <a href="read_test.html?docId=${note._id}" class="w-10 h-10 rounded-full bg-[#1c1d22] border border-white/5 flex items-center justify-center text-slate-400 group-hover:bg-[#f59e0b] group-hover:text-white transition-colors font-medium" title="Read & Test">
-                                    <i class="fa-solid fa-book-open-reader text-sm"></i>
+                                <a href="read_test.html?docId=${note._id}" class="btn-secondary flex-1 py-1.5 text-[11px] justify-center gap-1.5" title="Read & Instant AI Quiz">
+                                    <i class="fa-solid fa-book-open-reader text-amber-600 text-xs"></i>
+                                    <span>Quiz</span>
                                 </a>
-                                <a href="study.html?docId=${note._id}" class="w-10 h-10 rounded-full bg-[#1c1d22] border border-white/5 flex items-center justify-center text-slate-400 group-hover:bg-[#08e3d6] group-hover:text-black transition-colors font-medium" title="Study Mode">
-                                    <i class="fa-solid fa-play text-sm"></i>
-                                </a>
+                                <button onclick="handleDownloadDoc('${note._id}', '${escapeQuotes(note.originalName)}', this)" class="btn-secondary px-2.5 py-1.5 text-[11px] justify-center" title="Download Original File">
+                                    <i class="fa-solid fa-download text-slate-600 text-xs"></i>
+                                </button>
                             </div>
                         </div>
                     `;
                     grid.appendChild(card);
                 });
-            } catch(e) {
-                console.error(e);
-                document.getElementById('loading').innerText = "Failed to load notes.";
             }
         }
-        
-        function resetNotesFilters() {
+
+        async function handleDownloadDoc(id, filename, btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+            btn.disabled = true;
+            try {
+                await api.downloadDocument(id, filename);
+                window.showToast('Download started', 'success');
+            } catch(e) {
+                window.showToast(e.message || 'Download failed', 'error');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        async function handleDeleteNote(id, subject) {
+            if (!confirm(`Are you sure you want to permanently delete "${subject}"?`)) return;
+            try {
+                await api.deleteDocument(id);
+                window.showToast(`Deleted "${subject}"`, 'success');
+                loadNotes();
+            } catch(err) {
+                window.showToast(err.message || 'Delete failed', 'error');
+            }
+        }
+
+        function resetFilters() {
             document.getElementById('filter-semester').value = '';
             document.getElementById('filter-subject').value = '';
             loadNotes();
         }
 
         document.getElementById('filter-semester').addEventListener('change', loadNotes);
-        document.getElementById('filter-subject').addEventListener('keyup', (e) => {
+        document.getElementById('filter-subject').addEventListener('input', () => {
             if (window.searchTimeout) clearTimeout(window.searchTimeout);
             window.searchTimeout = setTimeout(loadNotes, 300);
         });

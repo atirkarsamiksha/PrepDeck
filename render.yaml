@@ -1,0 +1,29 @@
+# Render Blueprint Configuration for PrepDeck
+services:
+  - type: web
+    name: prepdeck
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: cd server && npm install --production
+    startCommand: cd server && node server.js
+    healthCheckPath: /api/health
+    disk:
+      name: prepdeck-uploads
+      mountPath: /opt/render/project/src/server/uploads
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: STORAGE_PATH
+        value: /opt/render/project/src/server/uploads
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false

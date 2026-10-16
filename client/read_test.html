@@ -1,261 +1,274 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Read & Test - PrepDeck</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Read & Test — PrepDeck</title>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        cyanBg: '#08e3d6',
-                        primary: '#08e3d6',
-                        secondary: '#a855f7',
-                        darkbg: '#0a0a0c',
-                        panelbg: '#141416',
-                        cardbg: '#181a1f'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
+        if (!localStorage.getItem('prepdeck_token')) {
+            window.location.replace('auth.html?mode=login');
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+              }
+            },
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <script src="js/api.js"></script>
     <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
-
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #2a2a30;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3a3a40;
-        }
-
         .pdf-canvas-container {
             display: flex;
             justify-content: center;
             overflow-y: auto;
-            max-height: calc(100vh - 160px);
-            padding: 20px;
+            max-height: calc(100vh - 145px);
+            padding: 1.5rem;
         }
-
         canvas {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-            border-radius: 4px;
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+            border-radius: 0.5rem;
+            background: #ffffff;
         }
     </style>
 </head>
+<body class="bg-[#f8fafc] text-slate-900 h-screen flex flex-col font-sans overflow-hidden antialiased">
 
-<body class="bg-darkbg text-slate-100 h-screen flex flex-col font-sans overflow-hidden">
-
-    <!-- Header -->
-    <header
-        class="px-6 py-4 flex justify-between items-center bg-panelbg border-b border-white/5 shrink-0 z-10 shadow-md">
-        <div class="flex items-center gap-4">
-            <a href="dashboard.html"
-                class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                <i class="fa-solid fa-arrow-left"></i>
-            </a>
-            <div>
-                <h1 class="font-bold text-xl text-white" id="doc-title">Loading...</h1>
-                <p class="text-xs text-slate-400" id="doc-meta">Read & Test Mode</p>
+    <!-- Top Navigation Bar -->
+    <header class="px-4 sm:px-6 py-3 flex justify-between items-center bg-white border-b border-slate-200 shrink-0 z-10 shadow-sm">
+        <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+            <button onclick="window.smartBack('notes.html')" class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm shrink-0" title="Go Back">
+                <i class="fa-solid fa-arrow-left text-slate-600 text-sm"></i>
+            </button>
+            <div class="overflow-hidden">
+                <h1 class="font-extrabold text-sm sm:text-base text-slate-900 truncate" id="doc-title">Loading PDF Document...</h1>
+                <p class="text-[11px] text-slate-500 font-medium truncate" id="doc-meta">Read & Test Mode</p>
             </div>
         </div>
-        <div class="flex items-center gap-4">
-            <button id="view-history-btn"
-                class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium transition-colors border border-white/10">
-                <i class="fa-solid fa-clock-rotate-left mr-2"></i>History
+
+        <div class="flex items-center gap-2 sm:gap-3">
+            <button id="view-history-btn" class="btn-secondary text-xs py-2 px-3">
+                <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+                <span class="hidden sm:inline">Quiz History</span>
             </button>
-            <div class="flex items-center bg-slate-900/80 px-4 py-2 rounded-xl border border-white/5">
-                <span class="text-xs text-slate-400 mr-2 uppercase tracking-wider font-bold">Progress</span>
-                <span class="font-mono font-bold text-primary" id="page-indicator">0/0</span>
+
+            <!-- Page progress indicator -->
+            <div class="flex items-center bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                <span class="text-[10px] text-slate-400 mr-2 uppercase tracking-wider font-bold">Page</span>
+                <span class="font-mono font-bold text-xs text-indigo-600" id="page-indicator">0/0</span>
             </div>
-            <button id="take-quiz-btn" disabled
-                class="px-6 py-2 rounded-lg bg-primary/20 text-primary font-medium border border-primary/30 opacity-50 cursor-not-allowed transition-all">
-                <i class="fa-solid fa-bolt mr-2"></i>Take Quiz
+
+            <!-- Take Quiz Trigger Button -->
+            <button id="take-quiz-btn" disabled class="btn-primary text-xs py-2 px-3.5 opacity-50 cursor-not-allowed">
+                <i class="fa-solid fa-bolt text-xs"></i> Take Quiz
+            </button>
+
+            <!-- Download Button -->
+            <button id="download-doc-btn" onclick="handleDownloadCurrentDoc()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors" title="Download Document">
+                <i class="fa-solid fa-download text-xs"></i>
+            </button>
+
+            <!-- Logout -->
+            <button onclick="api.logout()" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center transition-colors ml-1" title="Log Out">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
             </button>
         </div>
     </header>
 
-    <main class="flex-1 flex overflow-hidden relative">
-        <!-- PDF Viewer -->
-        <div id="pdf-container" class="flex-1 flex flex-col relative w-full h-full bg-[#1e1e24]">
-            <div class="p-3 bg-panelbg border-b border-white/5 flex justify-center gap-4 shrink-0">
-                <button id="prev-page"
-                    class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <div class="flex items-center">
-                    <span class="text-sm font-medium">Page <span id="current-page-display">1</span> of <span
-                            id="total-pages-display">?</span></span>
-                </div>
-                <button id="next-page"
-                    class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
-            <div class="pdf-canvas-container flex-1 bg-[#1e1e24]" id="canvas-wrapper">
-                <canvas id="pdf-render"></canvas>
-            </div>
+    <!-- Main PDF Viewer Workspace -->
+    <main class="flex-1 relative overflow-hidden bg-slate-100/70 flex flex-col items-center">
+        
+        <!-- Canvas Container -->
+        <div class="w-full flex-1 pdf-canvas-container">
+            <canvas id="pdf-render"></canvas>
         </div>
 
-        <!-- Quiz Container (Hidden initially) -->
-        <div id="quiz-container" class="absolute inset-0 bg-darkbg z-20 hidden flex-col">
-            <div class="flex-1 overflow-y-auto p-8 lg:p-12 max-w-4xl mx-auto w-full">
+        <!-- Floating Bottom Toolbar -->
+        <div class="absolute bottom-5 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg px-4 py-2 rounded-2xl flex items-center gap-4 z-20">
+            <button id="prev-page" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="Previous Page">
+                <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
 
-                <div id="quiz-setup" class="text-center py-20">
-                    <i class="fa-solid fa-robot text-6xl text-primary mb-6 animate-bounce"></i>
-                    <h2 class="text-3xl font-bold mb-4">Generate Your Quiz</h2>
-                    <p class="text-slate-400 mb-8 max-w-md mx-auto">You've finished reading! Let our AI generate a
-                        custom quiz based strictly on the material you just read.</p>
+            <span class="text-xs font-semibold text-slate-700">
+                Page <span id="current-page-display">1</span> of <span id="total-pages-display">1</span>
+            </span>
 
-                    <div class="flex justify-center gap-4 mb-8">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="difficulty" value="easy" class="peer sr-only">
-                            <div
-                                class="px-6 py-3 rounded-xl border border-white/10 bg-panelbg peer-checked:border-green-500 peer-checked:bg-green-500/10 transition-all font-medium text-slate-300 peer-checked:text-green-400">
-                                Easy</div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="difficulty" value="medium" class="peer sr-only" checked>
-                            <div
-                                class="px-6 py-3 rounded-xl border border-white/10 bg-panelbg peer-checked:border-primary peer-checked:bg-primary/10 transition-all font-medium text-slate-300 peer-checked:text-primary">
-                                Medium</div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="difficulty" value="hard" class="peer sr-only">
-                            <div
-                                class="px-6 py-3 rounded-xl border border-white/10 bg-panelbg peer-checked:border-red-500 peer-checked:bg-red-500/10 transition-all font-medium text-slate-300 peer-checked:text-red-400">
-                                Hard</div>
-                        </label>
-                    </div>
+            <button id="next-page" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="Next Page">
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+            
+            <div class="w-px h-5 bg-slate-200"></div>
 
-                    <button id="start-generation-btn"
-                        class="px-8 py-4 rounded-xl bg-primary text-black font-bold text-lg hover:bg-[#06c2b6] transition-colors shadow-[0_0_20px_rgba(8,227,214,0.4)]">
-                        Generate Now
-                    </button>
-                </div>
-
-                <div id="quiz-loading" class="hidden text-center py-32">
-                    <div
-                        class="w-16 h-16 border-4 border-slate-700 border-t-primary rounded-full animate-spin mx-auto mb-6">
-                    </div>
-                    <h3 class="text-2xl font-bold text-white mb-2">Analyzing Document...</h3>
-                    <p class="text-slate-400" id="loading-msg">Extracting concepts and generating questions</p>
-                </div>
-
-                <div id="quiz-active" class="hidden space-y-8 pb-20">
-                    <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
-                        <h2 class="text-2xl font-bold">Knowledge Check</h2>
-                        <span
-                            class="px-3 py-1 bg-primary/20 text-primary text-xs font-bold uppercase tracking-widest rounded-full"
-                            id="quiz-difficulty-badge">Medium</span>
-                    </div>
-
-                    <div id="questions-list" class="space-y-10"></div>
-
-                    <div class="flex justify-end pt-6 border-t border-white/5">
-                        <button id="submit-quiz-btn"
-                            class="px-8 py-4 rounded-xl bg-primary text-black font-bold text-lg hover:bg-[#06c2b6] transition-colors shadow-lg">
-                            Submit Answers
-                        </button>
-                    </div>
-                </div>
-
-                <div id="quiz-results" class="hidden space-y-8 pb-20">
-                    <div
-                        class="bg-panelbg rounded-3xl p-8 border border-white/5 text-center shadow-xl relative overflow-hidden">
-                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-[50px]"></div>
-                        <h2 class="text-3xl font-bold mb-2 relative z-10">Results</h2>
-                        <p class="text-slate-400 relative z-10 mb-6">Here is how you performed.</p>
-
-                        <div
-                            class="inline-flex flex-col items-center justify-center w-32 h-32 rounded-full border-4 border-primary/30 relative z-10 mb-4 bg-darkbg">
-                            <span class="text-4xl font-black text-primary" id="result-score">0</span>
-                            <span class="text-xs text-slate-500 font-bold uppercase">Points</span>
-                        </div>
-
-                        <div class="bg-darkbg/50 p-4 rounded-xl text-left mt-6 relative z-10 border border-white/5">
-                            <h4 class="text-sm font-bold text-slate-300 mb-2 uppercase tracking-wider">AI Summary</h4>
-                            <p class="text-slate-400 text-sm leading-relaxed" id="result-summary">Evaluating
-                                performance...</p>
-                        </div>
-                    </div>
-
-                    <h3 class="text-xl font-bold border-b border-white/5 pb-2">Detailed Breakdown</h3>
-                    <div id="results-list" class="space-y-6"></div>
-
-                    <div class="flex justify-center gap-4 pt-6">
-                        <button onclick="window.location.reload()"
-                            class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors">
-                            Read Again
-                        </button>
-                        <button onclick="window.location.href='dashboard.html'"
-                            class="px-6 py-3 rounded-xl bg-primary text-black font-medium transition-colors">
-                            Back to Dashboard
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- History Sidebar / Modal -->
-        <div id="history-panel"
-            class="absolute inset-y-0 right-0 w-96 bg-panelbg border-l border-white/5 z-30 transform translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
-            <div class="p-5 border-b border-white/5 flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Past Attempts</h3>
-                <button id="close-history-btn" class="text-slate-400 hover:text-white"><i
-                        class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-4 space-y-4" id="history-list">
-                <div class="text-center py-10 text-slate-500 text-sm">Loading history...</div>
-            </div>
+            <button id="zoom-in-btn" onclick="zoomIn()" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="Zoom In">
+                <i class="fa-solid fa-magnifying-glass-plus text-xs"></i>
+            </button>
+            <button id="zoom-out-btn" onclick="zoomOut()" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors" title="Zoom Out">
+                <i class="fa-solid fa-magnifying-glass-minus text-xs"></i>
+            </button>
         </div>
     </main>
 
-    <script src="js/api.js"></script>
+    <!-- Quiz Modal Container -->
+    <div id="quiz-container" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex-col items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative my-auto">
+            
+            <!-- Setup State -->
+            <div id="quiz-setup" class="p-6 sm:p-8">
+                <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-100">
+                    <div>
+                        <span class="badge badge-indigo mb-1">Knowledge Verification</span>
+                        <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Generate Document Quiz</h2>
+                    </div>
+                    <button class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors" onclick="closeQuizModal()">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Select Difficulty</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <label class="saas-card p-3 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-400 transition-colors">
+                                <input type="radio" name="difficulty" value="easy" class="text-indigo-600 focus:ring-indigo-500 mb-1">
+                                <span class="text-xs font-bold text-slate-900">Easy</span>
+                                <span class="text-[10px] text-slate-400 mt-0.5">Core concepts</span>
+                            </label>
+                            <label class="saas-card p-3 rounded-xl border border-indigo-200 bg-indigo-50/30 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-400 transition-colors">
+                                <input type="radio" name="difficulty" value="medium" checked class="text-indigo-600 focus:ring-indigo-500 mb-1">
+                                <span class="text-xs font-bold text-slate-900">Medium</span>
+                                <span class="text-[10px] text-slate-400 mt-0.5">Analysis & logic</span>
+                            </label>
+                            <label class="saas-card p-3 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-400 transition-colors">
+                                <input type="radio" name="difficulty" value="hard" class="text-indigo-600 focus:ring-indigo-500 mb-1">
+                                <span class="text-xs font-bold text-slate-900">Hard</span>
+                                <span class="text-[10px] text-slate-400 mt-0.5">Deep application</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs text-slate-600 space-y-1">
+                        <p class="font-bold text-slate-800">Quiz Structure:</p>
+                        <p>• 3 Multiple Choice Questions (MCQs)</p>
+                        <p>• 2 True / False Concept Checks</p>
+                        <p>• 2 Short-Answer Explanations</p>
+                    </div>
+
+                    <div class="pt-2">
+                        <button id="start-generation-btn" class="btn-primary w-full py-3 text-xs font-bold shadow-md shadow-indigo-100">
+                            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> Generate Quiz via Gemini AI
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="quiz-loading" class="hidden p-16 flex flex-col items-center justify-center text-center">
+                <i class="fa-solid fa-spinner fa-spin text-indigo-600 text-3xl mb-3"></i>
+                <p class="text-sm font-bold text-slate-900" id="loading-msg">Synthesizing PDF Concepts via AI...</p>
+                <p class="text-xs text-slate-500 mt-1">Generating custom questions based on this study document</p>
+            </div>
+
+            <!-- Active Quiz State -->
+            <div id="quiz-active" class="hidden flex-col max-h-[85vh]">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/70 shrink-0">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm">Knowledge Assessment</h3>
+                        <p class="text-[11px] text-slate-500">Answer all questions based on the document</p>
+                    </div>
+                    <span class="badge badge-indigo" id="quiz-difficulty-badge">Medium</span>
+                </div>
+
+                <div class="p-6 overflow-y-auto space-y-6 flex-1" id="questions-list">
+                    <!-- Populated via renderQuestions -->
+                </div>
+
+                <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
+                    <button class="btn-secondary text-xs py-2 px-3.5" onclick="closeQuizModal()">Cancel</button>
+                    <button id="submit-quiz-btn" class="btn-primary text-xs py-2 px-5 shadow-sm">
+                        Submit Quiz for Grading <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results State -->
+            <div id="quiz-results" class="hidden p-6 sm:p-8 space-y-6 max-h-[85vh] overflow-y-auto">
+                <div class="text-center">
+                    <span class="badge badge-emerald mb-2">Quiz Completed</span>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Your Quiz Results</h2>
+                    <div class="text-3xl font-extrabold text-indigo-600 mt-2" id="results-score">0 / 0</div>
+                </div>
+
+                <div class="bg-indigo-50/60 border border-indigo-100 p-4 rounded-xl text-xs text-indigo-950">
+                    <p class="font-bold text-xs mb-1 flex items-center gap-1.5 text-indigo-800">
+                        <i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> Performance Summary
+                    </p>
+                    <p id="results-summary" class="leading-relaxed">Good work completing this review.</p>
+                </div>
+
+                <div class="space-y-3" id="results-details">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button class="btn-secondary flex-1 text-xs py-2.5 justify-center" onclick="closeQuizModal()">Close</button>
+                    <button class="btn-primary flex-1 text-xs py-2.5 justify-center" onclick="restartQuizFlow()">Take Another Quiz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Past History Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex-col items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl relative flex flex-col max-h-[85vh]">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Past Quiz Attempts
+                </h3>
+                <button class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors" onclick="closeHistoryModal()">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-3 flex-1" id="history-list">
+                <div class="text-center py-8 text-slate-500 text-xs font-semibold">Loading past attempts...</div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        if (!api.token) window.location.href = 'auth.html';
+        api.requireAuth();
+
         const urlParams = new URLSearchParams(window.location.search);
         const docId = urlParams.get('docId');
 
-        // State
         let pdfDoc = null,
             pageNum = 1,
             pageIsRendering = false,
-            pageNumIsPending = null;
+            pageNumIsPending = null,
+            currentScale = 1.4;
 
-        let quizData = [];
         let generatedQuestions = [];
 
-        // UI Elements
         const canvas = document.getElementById('pdf-render'),
             ctx = canvas.getContext('2d');
         const takeQuizBtn = document.getElementById('take-quiz-btn');
@@ -263,24 +276,44 @@
 
         async function loadDocumentInfo() {
             try {
-                if (!docId) throw new Error("No document specified");
+                if (!docId) {
+                    document.getElementById('doc-title').innerText = "Select a Document";
+                    document.getElementById('doc-meta').innerText = "Please choose a note from the Study Library to begin";
+                    return;
+                }
                 const res = await fetch(`${API_BASE_URL}/docs/${docId}`, { headers: api.getHeaders() });
+                if (!res.ok) {
+                    if (res.status === 401) api.logout();
+                    throw new Error("Could not find document");
+                }
                 const doc = await res.json();
 
                 document.getElementById('doc-title').innerText = doc.originalName;
-                document.getElementById('doc-meta').innerText = `${doc.subject} • ${doc.type}`;
+                document.getElementById('doc-meta').innerText = `${doc.subject} • Sem ${doc.semester} • ${doc.type}`;
 
-                loadPDF(`http://localhost:5000${doc.filepath}`);
+                const pdfUrl = `${API_BASE_URL}/docs/${docId}/file`;
+                loadPDF(pdfUrl);
             } catch (e) {
-                console.error(e);
+                console.error("Document load error:", e);
+                document.getElementById('doc-title').innerText = "Failed to load document";
             }
         }
 
-        // PDF Handling
+        async function handleDownloadCurrentDoc() {
+            if (!docId) return;
+            const title = document.getElementById('doc-title').innerText || 'document.pdf';
+            try {
+                await api.downloadDocument(docId, title);
+                window.showToast('Download started', 'success');
+            } catch(e) {
+                window.showToast(e.message || 'Download failed', 'error');
+            }
+        }
+
         const renderPage = num => {
             pageIsRendering = true;
             pdfDoc.getPage(num).then(page => {
-                const viewport = page.getViewport({ scale: 1.5 });
+                const viewport = page.getViewport({ scale: currentScale });
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
 
@@ -296,12 +329,9 @@
                 document.getElementById('current-page-display').textContent = num;
                 pageIndicator.textContent = `${num}/${pdfDoc.numPages}`;
 
-                // Unlock Quiz logic
-                if (num === pdfDoc.numPages) {
-                    takeQuizBtn.disabled = false;
-                    takeQuizBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-primary/20', 'border-primary/30', 'text-primary');
-                    takeQuizBtn.classList.add('bg-primary', 'text-black', 'hover:bg-[#06c2b6]', 'shadow-[0_0_15px_rgba(8,227,214,0.5)]');
-                }
+                // Enable quiz immediately so scholar can test at any point
+                takeQuizBtn.disabled = false;
+                takeQuizBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             });
         };
 
@@ -320,43 +350,91 @@
         };
 
         const onNextPage = () => {
-            if (pageNum >= pdfDoc.numPages) return;
+            if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
             pageNum++;
             queueRenderPage(pageNum);
         };
 
-        const loadPDF = url => {
-            pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
-                pdfDoc = pdfDoc_;
+        function zoomIn() {
+            currentScale = Math.min(2.5, currentScale + 0.2);
+            queueRenderPage(pageNum);
+        }
+
+        function zoomOut() {
+            currentScale = Math.max(0.8, currentScale - 0.2);
+            queueRenderPage(pageNum);
+        }
+
+        const loadPDF = async url => {
+            try {
+                const res = await fetch(url, { headers: api.getHeaders() });
+                if (!res.ok) {
+                    if (res.status === 401) api.logout();
+                    throw new Error("Could not stream document file");
+                }
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('text/plain')) {
+                    const text = await res.text();
+                    canvas.classList.add('hidden');
+                    let textViewer = document.getElementById('text-render');
+                    if (!textViewer) {
+                        textViewer = document.createElement('pre');
+                        textViewer.id = 'text-render';
+                        textViewer.className = 'w-full max-w-4xl p-6 bg-white rounded-xl shadow-sm border border-slate-200 text-xs text-slate-800 font-mono whitespace-pre-wrap overflow-y-auto max-h-[calc(100vh-160px)]';
+                        canvas.parentNode.appendChild(textViewer);
+                    }
+                    textViewer.textContent = text;
+                    textViewer.classList.remove('hidden');
+                    document.getElementById('total-pages-display').textContent = '1';
+                    pageIndicator.textContent = '1/1';
+                    takeQuizBtn.disabled = false;
+                    takeQuizBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    return;
+                }
+                const arrayBuffer = await res.arrayBuffer();
+                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                 document.getElementById('total-pages-display').textContent = pdfDoc.numPages;
                 pageIndicator.textContent = `1/${pdfDoc.numPages}`;
 
-                if (pdfDoc.numPages === 1) {
-                    takeQuizBtn.disabled = false;
-                    takeQuizBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-primary/20', 'border-primary/30', 'text-primary');
-                    takeQuizBtn.classList.add('bg-primary', 'text-black', 'hover:bg-[#06c2b6]', 'shadow-[0_0_15px_rgba(8,227,214,0.5)]');
-                }
+                takeQuizBtn.disabled = false;
+                takeQuizBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 
                 renderPage(pageNum);
-            }).catch(err => {
-                console.error('Error loading PDF', err);
-            });
+            } catch (err) {
+                console.error('Error loading document', err);
+                document.getElementById('doc-title').innerText = "Failed to render document";
+            }
         };
 
         document.getElementById('prev-page').addEventListener('click', onPrevPage);
         document.getElementById('next-page').addEventListener('click', onNextPage);
 
-        // Quiz Logic
+        // Quiz Triggers
         takeQuizBtn.addEventListener('click', () => {
             document.getElementById('quiz-container').classList.remove('hidden');
             document.getElementById('quiz-container').classList.add('flex');
+            document.getElementById('quiz-setup').classList.remove('hidden');
+            document.getElementById('quiz-loading').classList.add('hidden');
+            document.getElementById('quiz-active').classList.add('hidden');
+            document.getElementById('quiz-results').classList.add('hidden');
         });
+
+        window.closeQuizModal = function() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('flex');
+        };
+
+        function restartQuizFlow() {
+            document.getElementById('quiz-results').classList.add('hidden');
+            document.getElementById('quiz-setup').classList.remove('hidden');
+        }
 
         document.getElementById('start-generation-btn').addEventListener('click', async () => {
             const diff = document.querySelector('input[name="difficulty"]:checked').value;
             document.getElementById('quiz-setup').classList.add('hidden');
             document.getElementById('quiz-loading').classList.remove('hidden');
-            document.getElementById('quiz-difficulty-badge').innerText = diff;
+            document.getElementById('loading-msg').innerText = "Synthesizing PDF Concepts via AI...";
+            document.getElementById('quiz-difficulty-badge').innerText = diff.toUpperCase();
 
             try {
                 const data = await api.generateQuiz(docId, diff);
@@ -365,9 +443,10 @@
 
                 document.getElementById('quiz-loading').classList.add('hidden');
                 document.getElementById('quiz-active').classList.remove('hidden');
+                document.getElementById('quiz-active').classList.add('flex');
             } catch (e) {
                 document.getElementById('loading-msg').innerText = "Failed: " + e.message;
-                document.getElementById('loading-msg').classList.add('text-red-400');
+                window.showToast("Quiz generation failed: " + e.message, 'error');
             }
         });
 
@@ -377,31 +456,31 @@
 
             questions.forEach((q, idx) => {
                 const qDiv = document.createElement('div');
-                qDiv.className = 'bg-panelbg border border-white/5 p-6 rounded-2xl shadow-sm';
+                qDiv.className = 'saas-card p-5 space-y-2';
 
                 let inputHtml = '';
                 if (q.questionType === 'MCQ' || q.questionType === 'TF') {
-                    inputHtml = `<div class="space-y-3 mt-4">`;
-                    q.options.forEach((opt, oIdx) => {
+                    inputHtml = `<div class="space-y-2 pt-2">`;
+                    (q.options || []).forEach((opt) => {
                         inputHtml += `
-                            <label class="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:bg-white/5 cursor-pointer transition-colors">
-                                <input type="radio" name="q_${idx}" value="${opt}" class="text-primary focus:ring-primary w-4 h-4 bg-darkbg border-slate-600">
-                                <span class="text-slate-300 text-sm">${opt}</span>
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors text-xs font-semibold text-slate-800">
+                                <input type="radio" name="q_${idx}" value="${opt}" class="text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                <span>${opt}</span>
                             </label>
                         `;
                     });
                     inputHtml += `</div>`;
                 } else if (q.questionType === 'ShortAnswer') {
                     inputHtml = `
-                        <textarea name="q_${idx}" class="w-full h-24 bg-darkbg border border-slate-700 rounded-xl p-4 mt-4 focus:outline-none focus:border-primary text-slate-200 text-sm" placeholder="Type your answer here..."></textarea>
+                        <textarea name="q_${idx}" class="w-full h-20 saas-input text-xs resize-none mt-2" placeholder="Write your concise concept explanation..."></textarea>
                     `;
                 }
 
                 qDiv.innerHTML = `
-                    <div class="flex gap-4">
-                        <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">${idx + 1}</div>
-                        <div class="w-full">
-                            <h3 class="text-lg font-medium text-white">${q.questionText}</h3>
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-md bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0 border border-indigo-100">${idx + 1}</span>
+                        <div class="flex-1">
+                            <h4 class="text-xs font-bold text-slate-900 leading-snug">${q.questionText}</h4>
                             ${inputHtml}
                         </div>
                     </div>
@@ -413,22 +492,22 @@
         document.getElementById('submit-quiz-btn').addEventListener('click', async () => {
             const diff = document.querySelector('input[name="difficulty"]:checked').value;
 
-            // Gather answers
             const answers = generatedQuestions.map((q, idx) => {
                 let ans = '';
                 if (q.questionType === 'MCQ' || q.questionType === 'TF') {
                     const selected = document.querySelector(`input[name="q_${idx}"]:checked`);
                     ans = selected ? selected.value : '';
                 } else {
-                    ans = document.querySelector(`textarea[name="q_${idx}"]`).value;
+                    const txt = document.querySelector(`textarea[name="q_${idx}"]`);
+                    ans = txt ? txt.value.trim() : '';
                 }
                 return { ...q, studentAnswer: ans };
             });
 
             document.getElementById('quiz-active').classList.add('hidden');
+            document.getElementById('quiz-active').classList.remove('flex');
             document.getElementById('quiz-loading').classList.remove('hidden');
-            document.getElementById('loading-msg').innerText = "Evaluating your answers...";
-            document.getElementById('loading-msg').classList.remove('text-red-400');
+            document.getElementById('loading-msg').innerText = "Grading your answers with AI...";
 
             try {
                 const result = await api.evaluateQuiz({
@@ -438,109 +517,86 @@
                 });
 
                 showResults(result);
-            } catch (e) {
-                document.getElementById('loading-msg').innerText = "Evaluation failed: " + e.message;
-                document.getElementById('loading-msg').classList.add('text-red-400');
+            } catch (err) {
+                alert("Evaluation failed: " + err.message);
+                document.getElementById('quiz-loading').classList.add('hidden');
+                document.getElementById('quiz-active').classList.remove('hidden');
             }
         });
 
-        function showResults(attempt) {
+        function showResults(data) {
             document.getElementById('quiz-loading').classList.add('hidden');
             document.getElementById('quiz-results').classList.remove('hidden');
 
-            document.getElementById('result-score').innerText = `${attempt.score}/${attempt.totalQuestions}`;
-            document.getElementById('result-summary').innerText = attempt.performanceSummary || "No summary provided.";
+            document.getElementById('results-score').innerText = `${data.score} / ${data.totalQuestions}`;
+            document.getElementById('results-summary').innerText = data.performanceSummary || "Quiz completed.";
 
-            const container = document.getElementById('results-list');
-            container.innerHTML = '';
+            const details = document.getElementById('results-details');
+            details.innerHTML = '';
 
-            attempt.questions.forEach((q, idx) => {
-                const isCorr = q.isCorrect;
-                const icon = isCorr ? '<i class="fa-solid fa-check text-green-500 text-xl"></i>' : '<i class="fa-solid fa-xmark text-red-500 text-xl"></i>';
-                const borderClass = isCorr ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5';
+            (data.questions || []).forEach((q, idx) => {
+                const isCorrect = q.isCorrect;
+                const badgeClass = isCorrect ? 'badge-emerald' : 'badge-rose';
+                const statusLabel = isCorrect ? 'Correct' : 'Incorrect';
 
-                const qDiv = document.createElement('div');
-                qDiv.className = `p-5 rounded-2xl border ${borderClass}`;
-
-                qDiv.innerHTML = `
-                    <div class="flex gap-4 mb-3">
-                        <div class="mt-1">${icon}</div>
-                        <div>
-                            <h4 class="font-medium text-white">${idx + 1}. ${q.questionText}</h4>
-                            <div class="mt-2 text-sm grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <span class="text-slate-500 block text-xs uppercase mb-1">Your Answer:</span>
-                                    <span class="${isCorr ? 'text-green-400' : 'text-red-400'} font-medium">${q.studentAnswer || '[No Answer]'}</span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-xs uppercase mb-1">Correct Answer:</span>
-                                    <span class="text-slate-300 font-medium">${q.correctAnswer}</span>
-                                </div>
-                            </div>
-                            <div class="mt-3 p-3 bg-darkbg rounded-lg text-sm text-slate-400 border border-white/5 flex gap-3">
-                                <i class="fa-solid fa-lightbulb text-yellow-500 mt-0.5"></i>
-                                <p>${q.explanation || 'No explanation provided.'}</p>
-                            </div>
-                        </div>
+                const card = document.createElement('div');
+                card.className = 'p-3.5 rounded-xl border ' + (isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200');
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2 mb-1.5">
+                        <span class="text-xs font-bold text-slate-900 leading-snug">Q${idx + 1}: ${q.questionText}</span>
+                        <span class="badge ${badgeClass} shrink-0">${statusLabel}</span>
+                    </div>
+                    <div class="text-[11px] space-y-1 text-slate-700">
+                        <p><strong class="text-slate-900">Your Answer:</strong> ${q.studentAnswer || '<span class="italic text-slate-400">None</span>'}</p>
+                        <p><strong class="text-emerald-700">Expected:</strong> ${q.correctAnswer}</p>
+                        <p><strong class="text-indigo-700">Explanation:</strong> ${q.explanation || 'Reviewed by AI'}</p>
                     </div>
                 `;
-                container.appendChild(qDiv);
+                details.appendChild(card);
             });
         }
 
-        // History Panel
-        const historyBtn = document.getElementById('view-history-btn');
-        const historyPanel = document.getElementById('history-panel');
-        const closeHistBtn = document.getElementById('close-history-btn');
-
-        historyBtn.addEventListener('click', async () => {
-            historyPanel.classList.remove('translate-x-full');
-
-            const histList = document.getElementById('history-list');
-            histList.innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-primary"></i></div>';
+        // Quiz History
+        document.getElementById('view-history-btn').addEventListener('click', async () => {
+            const modal = document.getElementById('history-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            const list = document.getElementById('history-list');
+            list.innerHTML = '<div class="text-center py-8 text-slate-500 text-xs font-semibold"><i class="fa-solid fa-spinner fa-spin text-indigo-600 mr-2"></i> Loading past attempts...</div>';
 
             try {
                 const history = await api.getQuizHistory(docId);
-                if (history.length === 0) {
-                    histList.innerHTML = '<div class="text-center py-10 text-slate-500 text-sm">No previous attempts.</div>';
+                if (!Array.isArray(history) || history.length === 0) {
+                    list.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">No previous quiz attempts found for this document.</div>';
                     return;
                 }
 
-                histList.innerHTML = '';
-                history.forEach(h => {
-                    const date = new Date(h.attemptedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    const scorePct = Math.round((h.score / h.totalQuestions) * 100);
-                    const color = scorePct >= 80 ? 'text-green-400' : (scorePct >= 50 ? 'text-yellow-400' : 'text-red-400');
-
-                    const div = document.createElement('div');
-                    div.className = 'bg-darkbg p-4 rounded-xl border border-white/5 relative overflow-hidden';
-                    div.innerHTML = `
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <span class="text-xs text-slate-500 font-bold uppercase">${h.difficultyLevel}</span>
-                                <p class="text-sm text-white font-medium mt-1">${date}</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-2xl font-black ${color}">${h.score}/${h.totalQuestions}</span>
-                            </div>
+                list.innerHTML = '';
+                history.forEach((h, i) => {
+                    const row = document.createElement('div');
+                    row.className = 'saas-card p-4 flex justify-between items-center';
+                    row.innerHTML = `
+                        <div>
+                            <span class="text-xs font-bold text-slate-900">Attempt #${history.length - i} • ${h.difficultyLevel.toUpperCase()}</span>
+                            <span class="text-[11px] text-slate-500 block mt-0.5">${new Date(h.attemptedAt).toLocaleString()}</span>
                         </div>
-                        <p class="text-xs text-slate-400 line-clamp-2 mt-2">${h.performanceSummary || 'Completed'}</p>
+                        <div class="text-right">
+                            <span class="text-sm font-extrabold text-indigo-600">${h.score} / ${h.totalQuestions}</span>
+                        </div>
                     `;
-                    histList.appendChild(div);
+                    list.appendChild(row);
                 });
-            } catch (e) {
-                histList.innerHTML = `<div class="text-center py-10 text-red-500 text-sm">Failed to load history.</div>`;
+            } catch(e) {
+                list.innerHTML = '<div class="text-center py-8 text-rose-500 text-xs">Failed to load history.</div>';
             }
         });
 
-        closeHistBtn.addEventListener('click', () => {
-            historyPanel.classList.add('translate-x-full');
-        });
+        window.closeHistoryModal = function() {
+            document.getElementById('history-modal').classList.add('hidden');
+            document.getElementById('history-modal').classList.remove('flex');
+        };
 
-        // Initialize
         loadDocumentInfo();
-
     </script>
 </body>
-
 </html>

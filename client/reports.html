@@ -1,226 +1,344 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports & Analytics - PrepDeck</title>
+    <title>Analytics & Reports — PrepDeck</title>
+    <script>
+        if (!localStorage.getItem('prepdeck_token')) {
+            window.location.replace('auth.html?mode=login');
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
-        darkMode: 'class',
-        theme: { 
-            extend: { 
-                colors: { 
-                    cyanBg: '#08e3d6',
-                    primary: '#08e3d6',
-                    secondary: '#a855f7',
-                    darkbg: '#0a0a0c',
-                    panelbg: '#141416',
-                    cardbg: '#181a1f'
-                },
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif'],
-                }
-            } 
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#eef2ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+              }
+            },
+            fontFamily: {
+              sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            }
+          }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #2a2a30; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3a3a40; }
-    </style>
+    <script src="js/api.js"></script>
 </head>
-<body class="bg-darkbg text-slate-100 h-screen p-4 xl:p-6 flex justify-center font-sans overflow-hidden">
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
 
-    <!-- Centered Max-Width Container -->
-    <div class="max-w-[1400px] w-full flex flex-col h-full overflow-hidden">
+    <!-- Mobile Top Navigation Header -->
+    <header class="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                <i class="fa-solid fa-graduation-cap text-xs"></i>
+            </div>
+            <span class="font-bold text-base text-slate-900">PrepDeck</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openProfileModal()" id="mobile-top-avatar" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
+                ?
+            </button>
+            <button onclick="api.logout()" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 transition-colors" title="Logout">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-[1500px] w-full mx-auto flex-1 flex flex-col lg:flex-row p-4 sm:p-6 lg:p-8 gap-6">
         
-        <!-- Top Navbar -->
-        <header class="w-full flex justify-between items-center mb-4 px-2 shrink-0">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-wand-magic-sparkles text-primary text-2xl drop-shadow-[0_0_10px_rgba(8,227,214,0.3)]"></i>
-                <span class="text-2xl font-bold tracking-tight text-white">PrepDeck</span>
-            </div>
-            
-            <div class="flex items-center gap-6">
-                <nav class="hidden md:flex gap-6 text-sm font-semibold tracking-wide text-slate-400">
-                    <a href="dashboard.html" class="cursor-pointer hover:text-white transition-colors">Dash</a>
-                    <a href="notes.html" class="cursor-pointer hover:text-white transition-colors">Notes</a>
-                    <a href="pyqs.html" class="cursor-pointer hover:text-white transition-colors">PYQs</a>
-                    <a href="upload.html" class="cursor-pointer hover:text-white transition-colors">Upload</a>
-                    <a href="reports.html" class="text-primary cursor-pointer hover:text-white transition-colors">Reports</a>
+        <!-- Desktop Sidebar -->
+        <aside class="w-64 bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between shrink-0 shadow-sm hidden lg:flex h-[calc(100vh-4rem)] sticky top-8">
+            <div class="space-y-6">
+                <!-- Brand -->
+                <a href="dashboard.html" class="flex items-center gap-3 px-2 py-1 text-decoration-none">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-100">
+                        <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-lg text-slate-900 tracking-tight block leading-none">PrepDeck</span>
+                        <span class="text-[10px] font-semibold text-slate-500 tracking-wider uppercase mt-1 block">Study Workspace</span>
+                    </div>
+                </a>
+
+                <!-- Navigation Links -->
+                <nav class="space-y-1.5 pt-2">
+                    <a href="dashboard.html" class="nav-link">
+                        <i class="fa-solid fa-shapes text-sm w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="interview.html" class="nav-link">
+                        <i class="fa-solid fa-video text-sm w-5 text-center"></i>
+                        <span>Live Viva Interview</span>
+                    </a>
+                    <a href="notes.html" class="nav-link">
+                        <i class="fa-solid fa-book-open text-sm w-5 text-center"></i>
+                        <span>Study Library</span>
+                    </a>
+                    <a href="pyqs.html" class="nav-link">
+                        <i class="fa-regular fa-file-lines text-sm w-5 text-center"></i>
+                        <span>Past Papers</span>
+                    </a>
+                    <a href="upload.html" class="nav-link">
+                        <i class="fa-solid fa-cloud-arrow-up text-sm w-5 text-center"></i>
+                        <span>Upload Documents</span>
+                    </a>
+                    <a href="reports.html" class="nav-link active">
+                        <i class="fa-solid fa-chart-line text-sm w-5 text-center"></i>
+                        <span>Analytics & Reports</span>
+                    </a>
                 </nav>
-                <div id="top-avatar" onclick="openProfileModal()" class="w-10 h-10 rounded-full bg-slate-700 overflow-hidden ml-4 shadow-lg border border-slate-600 flex items-center justify-center text-sm font-bold bg-gradient-to-br from-slate-600 to-slate-800 cursor-pointer hover:border-primary transition-colors">
-                    ?
+            </div>
+
+            <!-- Bottom User & Logout -->
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+                <div onclick="openProfileModal()" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-200">
+                    <div id="sidebar-avatar" class="w-9 h-9 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold text-sm flex items-center justify-center shrink-0">
+                        ?
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-xs font-bold text-slate-900 truncate" id="sidebar-name">Scholar</p>
+                        <p class="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Pro Tier Active</p>
+                    </div>
+                    <i class="fa-solid fa-gear text-slate-400 text-xs"></i>
                 </div>
+
+                <button onclick="api.logout()" id="logout-btn-desktop" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+                    <span>Log Out</span>
+                </button>
             </div>
-        </header>
+        </aside>
 
-        <!-- Content Area -->
-        <div class="flex flex-1 gap-4 overflow-hidden w-full min-h-0">
+        <!-- Main Workspace -->
+        <main class="flex-1 flex flex-col gap-6 overflow-hidden min-w-0">
             
-            <!-- Floating Sidebar -->
-            <aside class="w-60 bg-panelbg rounded-3xl p-4 flex flex-col justify-between hidden lg:flex border border-white/5 shadow-2xl h-full flex-shrink-0">
-                <nav class="space-y-1 mt-1">
-                    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-shapes text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Dashboard</span>
-                    </a>
-                    <a href="notes.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-book-open text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Study Library</span>
-                    </a>
-                    <a href="pyqs.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-regular fa-file-lines text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Past Papers</span>
-                    </a>
-                    <a href="upload.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors font-medium">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-chart-simple text-slate-500 text-sm"></i></div>
-                        <span class="text-sm truncate">Uploads</span>
-                    </a>
-                </nav>
-
-                <div class="mt-auto">
-                    <button onclick="api.logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors font-medium mb-3">
-                        <div class="w-5 flex justify-center"><i class="fa-solid fa-sign-out-alt text-slate-500 transition-colors pointer-events-none text-sm"></i></div>
-                        <span class="text-sm">Logout</span>
+            <!-- Page Header -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="flex items-start gap-4">
+                    <button onclick="window.smartBack('dashboard.html')" class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm shrink-0 mt-1" title="Go Back">
+                        <i class="fa-solid fa-arrow-left text-slate-600 text-sm"></i>
                     </button>
-                    <div onclick="openProfileModal()" class="bg-[#1c1d22] rounded-xl p-3 flex items-center gap-3 border border-white/5 shadow-lg cursor-pointer hover:bg-white/5 hover:border-white/10 transition-all group">
-                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-primary border border-white/10 shrink-0 shadow-inner group-hover:border-primary transition-colors">
-                            <i class="fa-solid fa-user-astronaut text-xs"></i>
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold mb-2">
+                            <i class="fa-solid fa-chart-line text-xs"></i> Academic Progress Analytics
                         </div>
-                        <div class="overflow-hidden">
-                            <p class="text-xs font-bold text-white truncate group-hover:text-primary transition-colors" id="sidebar-name">Scholar</p>
-                            <p class="text-[8px] text-slate-400 font-bold tracking-widest uppercase truncate mt-0.5">Pro Tier Plan</p>
-                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                            Analytics & Reports
+                        </h1>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                            Review your verified study session logs, webcam focus scores, quiz attempts, and AI oral viva assessments.
+                        </p>
                     </div>
                 </div>
-            </aside>
+            </div>
 
-            <!-- Main Workspace -->
-            <main class="flex-1 overflow-y-auto pr-1 pb-4 min-h-0 flex flex-col">
-                <div class="flex flex-col flex-1 min-h-0">
-                <h1 class="text-4xl xl:text-5xl font-extrabold tracking-tight mb-2 text-white">Analytics & Reports</h1>
-                <p class="text-slate-400 font-medium tracking-wide mb-10 max-w-lg leading-relaxed text-sm">
-                    Detailed review of your cognitive metrics, study focus logs, and quiz evaluations.
-                </p>
-
-                <!-- Aggregated Score Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <div class="bg-cardbg rounded-3xl p-6 border border-white/5 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="w-10 h-10 rounded-2xl bg-[#192b34] text-[#08e3d6] flex items-center justify-center shadow-inner shrink-0">
-                                <i class="fa-solid fa-shapes text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="mt-auto">
-                            <h3 class="text-3xl font-extrabold text-white tracking-tight" id="agg-sessions">0</h3>
-                            <p class="text-[10px] uppercase tracking-widest font-black text-slate-500 mt-2 truncate">Total Sessions Completed</p>
-                        </div>
+            <!-- Overview Metrics Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                
+                <div class="saas-card p-5 saas-card-hover flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Study Sessions</span>
+                        <div class="text-2xl font-extrabold text-slate-900" id="agg-sessions">0</div>
+                        <span class="text-[11px] font-medium text-slate-500 mt-1 block">Completed Logs</span>
                     </div>
-
-                    <div class="bg-cardbg rounded-3xl p-6 border border-white/5 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="w-10 h-10 rounded-2xl bg-[#1b2b2a] text-[#5eead4] flex items-center justify-center shadow-inner shrink-0">
-                                <i class="fa-solid fa-clock text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="mt-auto">
-                            <h3 class="text-3xl font-extrabold text-white tracking-tight" id="agg-study-time">0.0h</h3>
-                            <p class="text-[10px] uppercase tracking-widest font-black text-slate-500 mt-2 truncate">Total Study Hours</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-cardbg rounded-3xl p-6 border border-white/5 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="w-10 h-10 rounded-2xl bg-[#281b35] text-[#b266ff] flex items-center justify-center shadow-inner shrink-0">
-                                <i class="fa-solid fa-bullseye text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="mt-auto">
-                            <h3 class="text-3xl font-extrabold text-white tracking-tight" id="agg-focus">0%</h3>
-                            <p class="text-[10px] uppercase tracking-widest font-black text-slate-500 mt-2 truncate">Average Focus Score</p>
-                        </div>
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-stopwatch"></i>
                     </div>
                 </div>
 
-                <!-- History Sections -->
-                <div class="space-y-10">
-                    <!-- Study Sessions -->
-                    <div class="bg-cardbg rounded-[2rem] p-8 border border-white/5 shadow-xl">
-                        <h2 class="text-2xl font-extrabold text-white mb-6 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-line text-primary"></i> Study Focus History
-                        </h2>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm border-collapse">
-                                <thead>
-                                    <tr class="border-b border-white/5 text-[10px] uppercase tracking-widest font-black text-slate-500">
-                                        <th class="pb-3 pr-4">Date</th>
-                                        <th class="pb-3 pr-4">Subject</th>
-                                        <th class="pb-3 pr-4">Study Duration</th>
-                                        <th class="pb-3 pr-4">Focused Duration</th>
-                                        <th class="pb-3">Focus Level</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="study-sessions-list" class="divide-y divide-white/5 text-slate-300 font-medium">
-                                    <tr>
-                                        <td colspan="5" class="py-8 text-center text-slate-500">Loading sessions...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <div class="saas-card p-5 saas-card-hover flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Study Time</span>
+                        <div class="text-2xl font-extrabold text-slate-900" id="agg-study-time">0m</div>
+                        <span class="text-[11px] font-medium text-slate-500 mt-1 block">Active Study Hours</span>
                     </div>
-
-                    <!-- Quiz Attempts -->
-                    <div class="bg-cardbg rounded-[2rem] p-8 border border-white/5 shadow-xl">
-                        <h2 class="text-2xl font-extrabold text-white mb-6 flex items-center gap-2">
-                            <i class="fa-solid fa-square-poll-horizontal text-secondary"></i> Quiz Evaluation History
-                        </h2>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm border-collapse">
-                                <thead>
-                                    <tr class="border-b border-white/5 text-[10px] uppercase tracking-widest font-black text-slate-500">
-                                        <th class="pb-3 pr-4">Date</th>
-                                        <th class="pb-3 pr-4">Subject</th>
-                                        <th class="pb-3 pr-4">Difficulty</th>
-                                        <th class="pb-3 pr-4">Score</th>
-                                        <th class="pb-3">Performance Feedback</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="quiz-attempts-list" class="divide-y divide-white/5 text-slate-300 font-medium">
-                                    <tr>
-                                        <td colspan="5" class="py-8 text-center text-slate-500">Loading quiz attempts...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-regular fa-clock"></i>
                     </div>
                 </div>
 
+                <div class="saas-card p-5 saas-card-hover flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Focus Average</span>
+                        <div class="text-2xl font-extrabold text-slate-900" id="agg-focus">100%</div>
+                        <span class="text-[11px] font-medium text-slate-500 mt-1 block">Attention Quality</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                </div>
+
+                <div class="saas-card p-5 saas-card-hover flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">AI Viva Completed</span>
+                        <div class="text-2xl font-extrabold text-slate-900" id="agg-interviews">0</div>
+                        <span class="text-[11px] font-medium text-slate-500 mt-1 block">Oral Exam Reviews</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 1: AI LIVE VIVA INTERVIEW HISTORY -->
+            <div class="saas-card p-6 space-y-4">
+                <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">AI Viva & Oral Interview History</h2>
+                        <p class="text-xs text-slate-500">Examiner evaluations, conceptual scores, and personalized feedback</p>
+                    </div>
+                    <span class="badge badge-indigo" id="interview-count-badge">0 attempts</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
+                                <th class="pb-3 pl-2">Date & Time</th>
+                                <th class="pb-3">Subject / Topic</th>
+                                <th class="pb-3">Difficulty</th>
+                                <th class="pb-3">Examiner Score</th>
+                                <th class="pb-3">Focus Score</th>
+                                <th class="pb-3">Discipline</th>
+                                <th class="pb-3 text-right pr-2">Review</th>
+                            </tr>
+                        </thead>
+                        <tbody id="interview-attempts-list" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 2: READ & TEST QUIZ ATTEMPTS -->
+            <div class="saas-card p-6 space-y-4">
+                <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Document Quiz Attempts</h2>
+                        <p class="text-xs text-slate-500">Multiple-choice, true/false, and concept test records</p>
+                    </div>
+                    <span class="badge badge-amber" id="quiz-count-badge">0 quizzes</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
+                                <th class="pb-3 pl-2">Date</th>
+                                <th class="pb-3">Document</th>
+                                <th class="pb-3">Difficulty</th>
+                                <th class="pb-3">Score</th>
+                                <th class="pb-3">Summary</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quiz-attempts-list" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 3: STUDY SESSIONS & FOCUS LOGS -->
+            <div class="saas-card p-6 space-y-4">
+                <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Focus Meter Sessions Log</h2>
+                        <p class="text-xs text-slate-500">Webcam face-tracking study intervals and attention ratios</p>
+                    </div>
+                    <span class="badge badge-emerald" id="session-count-badge">0 logs</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
+                                <th class="pb-3 pl-2">Date</th>
+                                <th class="pb-3">Total Duration</th>
+                                <th class="pb-3">Focused Duration</th>
+                                <th class="pb-3">Distracted Duration</th>
+                                <th class="pb-3">Focus Ratio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="study-sessions-list" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
 
-    <script src="js/api.js"></script>
+    <!-- Interview Detail Modal -->
+    <div id="interview-detail-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 w-full max-w-2xl shadow-2xl relative flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold border border-indigo-100">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">AI Viva Voce Assessment</h3>
+                        <p class="text-xs text-slate-500">Detailed question-by-question examiner breakdown</p>
+                    </div>
+                </div>
+                <button onclick="closeInterviewDetailModal()" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs" id="interview-detail-content"></div>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation Bottom Bar -->
+    <nav class="lg:hidden bg-white border-t border-slate-200 px-4 py-2 flex justify-around items-center sticky bottom-0 z-40 text-[10px] font-bold text-slate-500">
+        <a href="dashboard.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-shapes text-sm"></i>
+            <span>Dash</span>
+        </a>
+        <a href="notes.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-book-open text-sm"></i>
+            <span>Notes</span>
+        </a>
+        <a href="pyqs.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-regular fa-file-lines text-sm"></i>
+            <span>PYQs</span>
+        </a>
+        <a href="upload.html" class="flex flex-col items-center gap-1 hover:text-slate-900">
+            <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+            <span>Upload</span>
+        </a>
+        <a href="reports.html" class="flex flex-col items-center gap-1 text-indigo-600">
+            <i class="fa-solid fa-chart-line text-sm"></i>
+            <span>Reports</span>
+        </a>
+    </nav>
+
     <script>
-        if(!api.token) window.location.href = 'auth.html';
-        
+        api.requireAuth();
+
+        // Render Scholar name & avatar
         try {
             const userStr = localStorage.getItem('prepdeck_user');
-            if(userStr) {
+            if (userStr) {
                 const user = JSON.parse(userStr);
-                document.getElementById('sidebar-name').innerText = user?.name?.split(' ')[0] || 'Scholar';
-                document.getElementById('top-avatar').innerHTML = user?.name ? user.name.charAt(0).toUpperCase() : '?'; 
+                document.getElementById('sidebar-name').innerText = user?.name || 'Scholar';
+                const initials = user?.name ? user.name.charAt(0).toUpperCase() : '?';
+                document.getElementById('sidebar-avatar').innerText = initials;
+                const mobileAvatar = document.getElementById('mobile-top-avatar');
+                if (mobileAvatar) mobileAvatar.innerText = initials;
             }
         } catch(e) {
-            console.error("Local user load error:", e);
+            console.warn("User load warning:", e);
         }
 
         function formatDuration(ms) {
@@ -237,111 +355,204 @@
             return output.trim();
         }
 
+        let loadedInterviews = [];
+
         async function loadReports() {
             try {
-                // Fetch stats, sessions, and quizzes in parallel
-                const [stats, sessions, quizzes] = await Promise.all([
-                    api.getDashboardStats().catch(()=>({})),
-                    api.getStudySessions().catch(()=>([])),
-                    api.getAllQuizHistory().catch(()=>([])),
+                const [stats, sessions, quizzes, interviews] = await Promise.all([
+                    api.getDashboardStats().catch(() => ({})),
+                    api.getStudySessions().catch(() => []),
+                    api.getAllQuizHistory().catch(() => []),
+                    api.getInterviewHistory().catch(() => [])
                 ]);
 
-                // Render Summary Metrics
+                loadedInterviews = interviews || [];
+
+                // Summary Metrics
                 document.getElementById('agg-sessions').innerText = sessions.length || 0;
+                document.getElementById('agg-interviews').innerText = loadedInterviews.length || 0;
+                document.getElementById('interview-count-badge').innerText = `${loadedInterviews.length} attempts`;
+                document.getElementById('quiz-count-badge').innerText = `${quizzes.length || 0} quizzes`;
+                document.getElementById('session-count-badge').innerText = `${sessions.length || 0} logs`;
                 
                 const totalStudyMinutes = Math.floor((stats.totalStudyTime || 0) / 60000);
-                let displayStudyTime = '';
-                if (totalStudyMinutes < 60) {
-                    displayStudyTime = `${totalStudyMinutes}m`;
-                } else {
-                    displayStudyTime = `${(totalStudyMinutes / 60).toFixed(1)}h`;
-                }
-                document.getElementById('agg-study-time').innerText = displayStudyTime;
+                document.getElementById('agg-study-time').innerText = totalStudyMinutes < 60 
+                    ? `${totalStudyMinutes}m` 
+                    : `${(totalStudyMinutes / 60).toFixed(1)}h`;
                 
-                const focusScore = Math.round(stats.focusPercentage || 0);
+                const focusScore = Math.round(stats.focusPercentage || 100);
                 document.getElementById('agg-focus').innerText = `${focusScore}%`;
 
-                // Render Study Sessions Focus History
-                const sessionTableBody = document.getElementById('study-sessions-list');
-                sessionTableBody.innerHTML = '';
-                
-                if (sessions.length === 0) {
-                    sessionTableBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">No study sessions recorded yet.</td></tr>`;
+                // 1. Live Interview Table
+                const interviewTable = document.getElementById('interview-attempts-list');
+                interviewTable.innerHTML = '';
+                if (loadedInterviews.length === 0) {
+                    interviewTable.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No live interviews recorded yet. Start one from Study Mode!</td></tr>`;
                 } else {
-                    sessions.forEach(s => {
-                        const dateStr = new Date(s.startTime).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                    loadedInterviews.forEach((item, index) => {
+                        const dateStr = new Date(item.attemptedAt).toLocaleDateString(undefined, {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                         });
-                        
-                        const subjectName = s.document?.subject || 'General Study';
-                        const totalDur = formatDuration(s.durationMs);
-                        const focusDur = formatDuration(s.focusedMs);
-                        const focusPct = s.durationMs > 0 ? Math.round((s.focusedMs / s.durationMs) * 100) : 100;
-                        
-                        let badgeColor = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-                        if (focusPct >= 80) badgeColor = 'bg-green-500/20 text-green-400 border border-green-500/30';
-                        else if (focusPct < 50) badgeColor = 'bg-red-500/20 text-red-400 border border-red-500/30';
+                        const topic = item.topic || item.document?.subject || 'General Viva';
+                        const score = `${item.score}/10`;
+                        const diffBadge = item.difficultyLevel === 'easy' ? 'badge-emerald' : (item.difficultyLevel === 'hard' ? 'badge-rose' : 'badge-indigo');
                         
                         const row = document.createElement('tr');
-                        row.className = 'border-b border-white/5 hover:bg-white/[0.01] transition-colors';
+                        row.className = 'border-b border-slate-100 hover:bg-slate-50 transition-colors';
                         row.innerHTML = `
-                            <td class="py-4 pr-4 text-xs font-bold text-slate-400">${dateStr}</td>
-                            <td class="py-4 pr-4 text-white font-extrabold">${subjectName}</td>
-                            <td class="py-4 pr-4 font-mono text-slate-300">${totalDur}</td>
-                            <td class="py-4 pr-4 font-mono text-green-400">${focusDur}</td>
-                            <td class="py-4">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide border ${badgeColor}">${focusPct}% Focus</span>
+                            <td class="py-3.5 pl-2 text-slate-500 font-medium">${dateStr}</td>
+                            <td class="py-3.5 font-bold text-slate-900">${topic}</td>
+                            <td class="py-3.5"><span class="badge ${diffBadge}">${item.difficultyLevel || 'medium'}</span></td>
+                            <td class="py-3.5 font-extrabold text-indigo-600">${score}</td>
+                            <td class="py-3.5 font-semibold text-emerald-600">${item.focusPercentage || 100}%</td>
+                            <td class="py-3.5 text-slate-600 font-medium">${item.disciplineLevel || 'Moderately Focused'}</td>
+                            <td class="py-3.5 text-right pr-2">
+                                <button onclick="openInterviewDetails(${index})" class="btn-secondary text-[11px] py-1 px-2.5">
+                                    <i class="fa-solid fa-eye text-xs"></i> Details
+                                </button>
                             </td>
                         `;
-                        sessionTableBody.appendChild(row);
+                        interviewTable.appendChild(row);
                     });
                 }
 
-                // Render Quiz Attempt History
-                const quizTableBody = document.getElementById('quiz-attempts-list');
-                quizTableBody.innerHTML = '';
-                
-                if (quizzes.length === 0) {
-                    quizTableBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">No quiz attempts recorded yet.</td></tr>`;
+                // 2. Quiz Attempts Table
+                const quizTable = document.getElementById('quiz-attempts-list');
+                quizTable.innerHTML = '';
+                if (!quizzes || quizzes.length === 0) {
+                    quizTable.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No quiz attempts recorded yet. Launch Read & Test to test your syllabus retention!</td></tr>`;
                 } else {
                     quizzes.forEach(q => {
                         const dateStr = new Date(q.attemptedAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                         });
-                        
-                        const subjectName = q.document?.subject || 'Practice Material';
-                        const scoreStr = `${q.score}/${q.totalQuestions}`;
-                        const feedback = q.performanceSummary || 'Review completed.';
-                        
-                        let diffBadge = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-                        if (q.difficultyLevel === 'easy') diffBadge = 'bg-green-500/20 text-green-400 border border-green-500/30';
-                        else if (q.difficultyLevel === 'hard') diffBadge = 'bg-red-500/20 text-red-400 border border-red-500/30';
+                        const docName = q.document?.originalName || q.document?.subject || 'Document Review';
+                        const scoreStr = `${q.score} / ${q.totalQuestions}`;
+                        const diffBadge = q.difficultyLevel === 'easy' ? 'badge-emerald' : (q.difficultyLevel === 'hard' ? 'badge-rose' : 'badge-amber');
 
                         const row = document.createElement('tr');
-                        row.className = 'border-b border-white/5 hover:bg-white/[0.01] transition-colors';
+                        row.className = 'border-b border-slate-100 hover:bg-slate-50 transition-colors';
                         row.innerHTML = `
-                            <td class="py-4 pr-4 text-xs font-bold text-slate-400">${dateStr}</td>
-                            <td class="py-4 pr-4 text-white font-extrabold">${subjectName}</td>
-                            <td class="py-4 pr-4">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${diffBadge}">${q.difficultyLevel}</span>
-                            </td>
-                            <td class="py-4 pr-4 font-mono font-bold text-primary">${scoreStr}</td>
-                            <td class="py-4 text-slate-400 text-xs">${feedback}</td>
+                            <td class="py-3.5 pl-2 text-slate-500 font-medium">${dateStr}</td>
+                            <td class="py-3.5 font-bold text-slate-900">${docName}</td>
+                            <td class="py-3.5"><span class="badge ${diffBadge}">${q.difficultyLevel || 'medium'}</span></td>
+                            <td class="py-3.5 font-extrabold text-indigo-600">${scoreStr}</td>
+                            <td class="py-3.5 text-slate-600 truncate max-w-xs" title="${q.performanceSummary || ''}">${q.performanceSummary || 'Completed'}</td>
                         `;
-                        quizTableBody.appendChild(row);
+                        quizTable.appendChild(row);
+                    });
+                }
+
+                // 3. Study Sessions Table
+                const sessionTable = document.getElementById('study-sessions-list');
+                sessionTable.innerHTML = '';
+                if (!sessions || sessions.length === 0) {
+                    sessionTable.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No focus sessions recorded yet. Launch Study Mode to begin tracking attention!</td></tr>`;
+                } else {
+                    sessions.forEach(s => {
+                        const dateStr = new Date(s.startTime).toLocaleDateString(undefined, {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        });
+                        const totalStr = formatDuration(s.durationMs);
+                        const focusedStr = formatDuration(s.focusedMs);
+                        const distractedStr = formatDuration(s.distractedMs);
+                        const ratio = s.durationMs > 0 ? Math.round((s.focusedMs / s.durationMs) * 100) : 100;
+
+                        const row = document.createElement('tr');
+                        row.className = 'border-b border-slate-100 hover:bg-slate-50 transition-colors';
+                        row.innerHTML = `
+                            <td class="py-3.5 pl-2 text-slate-500 font-medium">${dateStr}</td>
+                            <td class="py-3.5 font-bold text-slate-900">${totalStr}</td>
+                            <td class="py-3.5 font-semibold text-emerald-600">${focusedStr}</td>
+                            <td class="py-3.5 font-semibold text-rose-500">${distractedStr}</td>
+                            <td class="py-3.5 font-extrabold text-indigo-600">${ratio}%</td>
+                        `;
+                        sessionTable.appendChild(row);
                     });
                 }
 
             } catch (err) {
-                console.error("Reports load error:", err);
+                console.error("Reports loading error:", err);
             }
         }
+
+        window.openInterviewDetails = function(index) {
+            const item = loadedInterviews[index];
+            if (!item) return;
+
+            const modal = document.getElementById('interview-detail-modal');
+            const content = document.getElementById('interview-detail-content');
+            
+            const rep = item.report || {};
+            const topic = item.topic || item.document?.subject || 'Viva Session';
+
+            let questionsHtml = '';
+            (item.questions || []).forEach((q, idx) => {
+                const isCorr = (q.correctness || '').toLowerCase().includes('correct') && !(q.correctness || '').toLowerCase().includes('partially');
+                const isPart = (q.correctness || '').toLowerCase().includes('partially');
+                const badgeClass = isCorr ? 'badge-emerald' : (isPart ? 'badge-amber' : 'badge-rose');
+
+                questionsHtml += `
+                    <div class="saas-card p-3.5 space-y-1.5">
+                        <div class="flex justify-between items-start gap-2">
+                            <span class="font-bold text-slate-900 text-xs">Q${idx + 1}: ${q.question}</span>
+                            <span class="badge ${badgeClass} shrink-0">${q.correctness || 'Score'} (${q.score}/10)</span>
+                        </div>
+                        <div class="text-[11px] space-y-1 text-slate-600">
+                            <p><strong class="text-slate-800">Your Answer:</strong> <span class="italic">"${q.studentAnswer || '[None]'}"</span></p>
+                            <p><strong class="text-emerald-700">Expected:</strong> ${q.expectedAnswer || 'N/A'}</p>
+                            <p><strong class="text-indigo-700">Examiner Feedback:</strong> ${q.feedback || 'Good effort.'}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                        <div>
+                            <span class="text-xs font-bold text-slate-900">${topic}</span>
+                            <span class="text-[10px] text-slate-400 block">${new Date(item.attemptedAt).toLocaleString()}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-lg font-extrabold text-indigo-600">${item.score}/10</span>
+                            <span class="text-[10px] text-emerald-600 font-semibold block">${item.focusPercentage || 100}% Focus</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50/50 border border-indigo-100 p-3.5 rounded-xl">
+                        <h4 class="font-bold text-indigo-900 text-xs mb-1">Performance Summary</h4>
+                        <p class="text-xs text-slate-700 leading-relaxed">${rep.summary || 'Viva evaluation recorded.'}</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl">
+                            <h4 class="font-bold text-emerald-800 text-xs mb-1.5">Strengths</h4>
+                            <ul class="text-[11px] text-slate-700 list-disc pl-4 space-y-1">
+                                ${(rep.strengths || ['Demonstrated clear understanding.']).map(s => `<li>${s}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="bg-rose-50/50 border border-rose-100 p-3 rounded-xl">
+                            <h4 class="font-bold text-rose-800 text-xs mb-1.5">Areas to Improve</h4>
+                            <ul class="text-[11px] text-slate-700 list-disc pl-4 space-y-1">
+                                ${(rep.weaknesses || ['Elaborate further on key technical definitions.']).map(w => `<li>${w}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-xs mb-2.5">Graded Question Transcript</h4>
+                        <div class="space-y-2.5">${questionsHtml || '<p class="text-slate-400">No questions recorded.</p>'}</div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeInterviewDetailModal = function() {
+            document.getElementById('interview-detail-modal').classList.add('hidden');
+        };
 
         loadReports();
     </script>
